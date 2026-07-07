@@ -41,6 +41,7 @@ func main() {
 	router.GET("/products/:id", productHandler.GetProductByID)
 	router.POST("/products", productHandler.CreateProduct)
 	router.PUT("/products/:id", productHandler.UpdateProduct)
+	router.DELETE("/products/:id", productHandler.DeleteProduct)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 )
@@ -117,4 +118,21 @@ func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Pr
 	}
 
 	return updatedProduct, nil
+}
+
+func (pr *ProductRepository) DeleteProduct(ctx context.Context, id int) error {
+	result, err := pr.db.Exec(ctx, `
+		DELETE FROM products
+		WHERE id = $1
+	`, id)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+
+	return nil
 }

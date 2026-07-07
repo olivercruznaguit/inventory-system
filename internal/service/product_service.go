@@ -32,3 +32,7 @@ func (ps *ProductService) CreateProduct(ctx context.Context, product model.Produ
 func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	return ps.repository.UpdateProduct(ctx, product)
 }
+
+func (ps *ProductService) DeleteProduct(ctx context.Context, id int) error {
+	return ps.repository.DeleteProduct(ctx, id)
+}

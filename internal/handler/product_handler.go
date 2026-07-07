@@ -90,7 +90,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
 	}
 
@@ -113,4 +113,31 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, updatedProduct)
+}
+
+func (h *ProductHandler) DeleteProduct(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	err = h.service.DeleteProduct(ctx, id)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Product not found",
+		})
+		return
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
