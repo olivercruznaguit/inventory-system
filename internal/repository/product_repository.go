@@ -78,3 +78,22 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
 
 	return product, nil
 }
+
+func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	var createdProduct model.Product
+
+	err := pr.db.QueryRow(ctx, `
+        INSERT INTO products (name, price)
+        VALUES ($1, $2)
+        RETURNING id, name, price
+    `, product.Name, product.Price).Scan(
+		&createdProduct.ID,
+		&createdProduct.Name,
+		&createdProduct.Price,
+	)
+	if err != nil {
+		return model.Product{}, err
+	}
+
+	return createdProduct, nil
+}

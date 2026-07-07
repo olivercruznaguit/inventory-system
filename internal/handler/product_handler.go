@@ -8,6 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/gin-gonic/gin"
+	"github.com/olivercruznaguit/inventory-system/internal/handler/request"
+	"github.com/olivercruznaguit/inventory-system/internal/model"
 	"github.com/olivercruznaguit/inventory-system/internal/service"
 )
 
@@ -58,4 +60,26 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, product)
+}
+
+func (h *ProductHandler) CreateProduct(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req request.CreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	product := model.Product{
+		Name:  req.Name,
+		Price: req.Price,
+	}
+
+	createdProduct, err := h.service.CreateProduct(ctx, product)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, createdProduct)
 }

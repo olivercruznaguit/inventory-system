@@ -39,6 +39,7 @@ func main() {
 
 	router.GET("/products", productHandler.GetProducts)
 	router.GET("/products/:id", productHandler.GetProductByID)
+	router.POST("/products", productHandler.CreateProduct)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

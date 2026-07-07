@@ -24,3 +24,7 @@ func (ps *ProductService) GetProducts(ctx context.Context) ([]model.Product, err
 func (ps *ProductService) GetProductByID(ctx context.Context, id int) (model.Product, error) {
 	return ps.repository.GetProductByID(ctx, id)
 }
+
+func (ps *ProductService) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	return ps.repository.CreateProduct(ctx, product)
+}
