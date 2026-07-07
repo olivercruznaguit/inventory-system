@@ -2,20 +2,46 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+	"log"
+
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+
+	"github.com/olivercruznaguit/inventory-system/internal/config"
+	"github.com/olivercruznaguit/inventory-system/internal/database"
+	"github.com/olivercruznaguit/inventory-system/internal/handler"
+	"github.com/olivercruznaguit/inventory-system/internal/repository"
+	"github.com/olivercruznaguit/inventory-system/internal/service"
 )
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "healthy")
-}
-
 func main() {
-	http.HandleFunc("/health", healthHandler)
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
 
-	fmt.Println("Server listening on :8080")
-
-	err := http.ListenAndServe(":8080", nil)
+	cfg, err := config.Load()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+
+	db, err := database.NewPostgres(cfg.DB)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Connected to PostgreSQL")
+	defer db.Close()
+
+	router := gin.Default()
+
+	productRepository := repository.ProductRepository{}
+	productService := service.NewProductService(&productRepository)
+	productHandler := handler.NewProductHandler(productService)
+
+	router.GET("/products", productHandler.GetProducts)
+
+	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
+
+	if err := router.Run(":" + cfg.App.Port); err != nil {
+		log.Fatal(err)
 	}
 }
