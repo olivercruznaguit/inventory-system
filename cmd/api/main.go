@@ -33,8 +33,8 @@ func main() {
 
 	router := gin.Default()
 
-	productRepository := repository.ProductRepository{}
-	productService := service.NewProductService(&productRepository)
+	productRepository := repository.NewProductRepository(db)
+	productService := service.NewProductService(productRepository)
 	productHandler := handler.NewProductHandler(productService)
 
 	router.GET("/products", productHandler.GetProducts)

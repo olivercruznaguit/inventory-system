@@ -1,12 +1,21 @@
 package repository
 
 import (
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 )
 
-type ProductRepository struct{}
+type ProductRepository struct {
+	db *pgxpool.Pool
+}
 
-func (r ProductRepository) GetProducts() []model.Product {
+func NewProductRepository(db *pgxpool.Pool) *ProductRepository {
+	return &ProductRepository{
+		db: db,
+	}
+}
+
+func (r *ProductRepository) GetProducts() []model.Product {
 
 	products := []model.Product{
 		{
