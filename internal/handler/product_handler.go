@@ -19,5 +19,12 @@ func NewProductHandler(service *service.ProductService) *ProductHandler {
 }
 
 func (h *ProductHandler) GetProducts(c *gin.Context) {
-	c.JSON(http.StatusOK, h.service.GetProducts())
+	ctx := c.Request.Context()
+	products, err := h.service.GetProducts(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, products)
 }

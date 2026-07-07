@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 )
@@ -15,27 +17,40 @@ func NewProductRepository(db *pgxpool.Pool) *ProductRepository {
 	}
 }
 
-func (r *ProductRepository) GetProducts() []model.Product {
+func (pr *ProductRepository) GetProducts(ctx context.Context) ([]model.Product, error) {
+	rows, err := pr.db.Query(ctx, `
+        SELECT
+            id,
+            name,
+            price
+        FROM products
+        ORDER BY id
+    `)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	products := []model.Product{
-		{
-			ID:     1,
-			Name:   "Laptop",
-			Price:  10.0,
-			Status: model.ProductStatusActive,
-		},
-		{
-			ID:     2,
-			Name:   "Keyboard",
-			Price:  10.0,
-			Status: model.ProductStatusActive,
-		},
-		{
-			ID:     3,
-			Name:   "Mouse",
-			Price:  5.0,
-			Status: model.ProductStatusInactive,
-		}}
+	var products []model.Product
 
-	return products
+	for rows.Next() {
+		var product model.Product
+
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, product)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }

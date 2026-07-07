@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 	"github.com/olivercruznaguit/inventory-system/internal/repository"
 )
@@ -15,13 +17,6 @@ func NewProductService(repository *repository.ProductRepository) *ProductService
 	}
 }
 
-func (ps *ProductService) GetProducts() []model.Product {
-	products := ps.repository.GetProducts()
-	activeProducts := make([]model.Product, 0, len(products))
-	for _, product := range products {
-		if product.Status == model.ProductStatusActive {
-			activeProducts = append(activeProducts, product)
-		}
-	}
-	return activeProducts
+func (ps *ProductService) GetProducts(ctx context.Context) ([]model.Product, error) {
+	return ps.repository.GetProducts(ctx)
 }
