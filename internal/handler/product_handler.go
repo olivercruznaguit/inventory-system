@@ -83,3 +83,34 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, createdProduct)
 }
+
+func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var req request.UpdateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	product := model.Product{
+		ID:    uint(id),
+		Name:  req.Name,
+		Price: req.Price,
+	}
+
+	updatedProduct, err := h.service.UpdateProduct(ctx, product)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedProduct)
+}

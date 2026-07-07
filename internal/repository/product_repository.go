@@ -97,3 +97,24 @@ func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Pr
 
 	return createdProduct, nil
 }
+
+func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	var updatedProduct model.Product
+
+	err := pr.db.QueryRow(ctx, `
+        UPDATE products
+        SET name = $1, price = $2
+        WHERE id = $3
+        RETURNING id, name, price
+    `, product.Name, product.Price, product.ID).Scan(
+		&updatedProduct.ID,
+		&updatedProduct.Name,
+		&updatedProduct.Price,
+	)
+
+	if err != nil {
+		return model.Product{}, err
+	}
+
+	return updatedProduct, nil
+}
