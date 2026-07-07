@@ -54,3 +54,27 @@ func (pr *ProductRepository) GetProducts(ctx context.Context) ([]model.Product, 
 
 	return products, nil
 }
+
+func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.Product, error) {
+	var product model.Product
+
+	row := pr.db.QueryRow(ctx, `
+        SELECT
+            id,
+            name,
+            price
+        FROM products
+        WHERE id = $1
+    `, id)
+
+	err := row.Scan(
+		&product.ID,
+		&product.Name,
+		&product.Price,
+	)
+	if err != nil {
+		return model.Product{}, err
+	}
+
+	return product, nil
+}

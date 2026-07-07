@@ -20,3 +20,7 @@ func NewProductService(repository *repository.ProductRepository) *ProductService
 func (ps *ProductService) GetProducts(ctx context.Context) ([]model.Product, error) {
 	return ps.repository.GetProducts(ctx)
 }
+
+func (ps *ProductService) GetProductByID(ctx context.Context, id int) (model.Product, error) {
+	return ps.repository.GetProductByID(ctx, id)
+}
