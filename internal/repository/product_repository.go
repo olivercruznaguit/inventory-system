@@ -20,7 +20,10 @@ func NewProductRepository(db *pgxpool.Pool) *ProductRepository {
 	}
 }
 
-func (pr *ProductRepository) GetProducts(ctx context.Context) ([]model.Product, error) {
+func (pr *ProductRepository) GetProducts(ctx context.Context, pagination model.Pagination) ([]model.Product, error) {
+
+	offset := (pagination.Page - 1) * pagination.PageSize
+	limit := pagination.PageSize
 	rows, err := pr.db.Query(ctx, `
         SELECT
             id,
@@ -28,10 +31,12 @@ func (pr *ProductRepository) GetProducts(ctx context.Context) ([]model.Product, 
             price
         FROM products
         ORDER BY id
-    `)
+		LIMIT $1 OFFSET $2
+    `, limit, offset)
 	if err != nil {
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	var products []model.Product
@@ -45,14 +50,14 @@ func (pr *ProductRepository) GetProducts(ctx context.Context) ([]model.Product, 
 			&product.Price,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get products: %w", err)
 		}
 
 		products = append(products, product)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get products: %w", err)
 	}
 
 	return products, nil
@@ -99,7 +104,7 @@ func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Pr
 		&createdProduct.Price,
 	)
 	if err != nil {
-		return model.Product{}, err
+		return model.Product{}, fmt.Errorf("create product: %w", err)
 	}
 
 	return createdProduct, nil

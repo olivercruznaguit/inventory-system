@@ -24,7 +24,28 @@ func NewProductHandler(service *service.ProductService) *ProductHandler {
 
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	ctx := c.Request.Context()
-	products, err := h.service.GetProducts(ctx)
+
+	pageStr := c.DefaultQuery("page", "1")
+	pageSizeStr := c.DefaultQuery("pageSize", "20")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page size"})
+		return
+	}
+
+	pagination := model.Pagination{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	products, err := h.service.GetProducts(ctx, pagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

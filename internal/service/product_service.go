@@ -17,8 +17,20 @@ func NewProductService(repository *repository.ProductRepository) *ProductService
 	}
 }
 
-func (ps *ProductService) GetProducts(ctx context.Context) ([]model.Product, error) {
-	return ps.repository.GetProducts(ctx)
+func (ps *ProductService) GetProducts(ctx context.Context, pagination model.Pagination) ([]model.Product, error) {
+	if pagination.Page < 1 {
+		pagination.Page = 1
+	}
+
+	if pagination.PageSize < 1 {
+		pagination.PageSize = 20
+	}
+
+	if pagination.PageSize > 100 {
+		pagination.PageSize = 100
+	}
+
+	return ps.repository.GetProducts(ctx, pagination)
 }
 
 func (ps *ProductService) GetProductByID(ctx context.Context, id int) (model.Product, error) {
