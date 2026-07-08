@@ -19,17 +19,24 @@ func NewProductService(repository *repository.ProductRepository) *ProductService
 }
 
 func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductFilter) (model.ProductList, error) {
-	pagination := filter.Pagination
-	if pagination.Page < 1 {
-		pagination.Page = 1
+	if filter.Pagination.Page < 1 {
+		filter.Pagination.Page = 1
 	}
 
-	if pagination.PageSize < 1 {
-		pagination.PageSize = 20
+	if filter.Pagination.PageSize < 1 {
+		filter.Pagination.PageSize = 20
 	}
 
-	if pagination.PageSize > 100 {
-		pagination.PageSize = 100
+	if filter.Pagination.PageSize > 100 {
+		filter.Pagination.PageSize = 100
+	}
+
+	if filter.Status == "" {
+		filter.Status = model.ProductStatusActive
+	}
+
+	if !filter.Status.IsValid() {
+		return model.ProductList{}, fmt.Errorf("get products: %w", ErrInvalidProductStatus)
 	}
 
 	products, err := ps.repository.GetProducts(ctx, filter)
@@ -42,14 +49,14 @@ func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductF
 		return model.ProductList{}, fmt.Errorf("count products: %w", err)
 	}
 
-	totalPages := (totalItems + pagination.PageSize - 1) / pagination.PageSize
+	totalPages := (totalItems + filter.Pagination.PageSize - 1) / filter.Pagination.PageSize
 
-	pagination.TotalItems = totalItems
-	pagination.TotalPages = totalPages
+	filter.Pagination.TotalItems = totalItems
+	filter.Pagination.TotalPages = totalPages
 
 	return model.ProductList{
 		Products:   products,
-		Pagination: pagination,
+		Pagination: filter.Pagination,
 	}, nil
 }
 
