@@ -1,6 +1,8 @@
 package model
 
 type Pagination struct {
-	Page     int
-	PageSize int
+	Page       int
+	PageSize   int
+	TotalItems int
+	TotalPages int
 }

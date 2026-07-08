@@ -6,3 +6,8 @@ type Product struct {
 	Price  float64
 	Status ProductStatus
 }
+
+type ProductList struct {
+	Products   []Product
+	Pagination Pagination
+}

@@ -150,3 +150,18 @@ func (pr *ProductRepository) DeleteProduct(ctx context.Context, id int) error {
 
 	return nil
 }
+
+func (pr *ProductRepository) CountProducts(ctx context.Context) (int, error) {
+	var count int
+
+	err := pr.db.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM products
+	`).Scan(&count)
+
+	if err != nil {
+		return 0, fmt.Errorf("count products: %w", err)
+	}
+
+	return count, nil
+}
