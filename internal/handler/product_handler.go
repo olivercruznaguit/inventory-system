@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/olivercruznaguit/inventory-system/internal/handler/request"
+	"github.com/olivercruznaguit/inventory-system/internal/handler/response"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 	"github.com/olivercruznaguit/inventory-system/internal/repository"
 	"github.com/olivercruznaguit/inventory-system/internal/service"
@@ -51,7 +52,26 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, products)
+	var productResponses []response.ProductResponse
+	for _, product := range products.Products {
+		productResponses = append(productResponses, response.ProductResponse{
+			ID:    product.ID,
+			Name:  product.Name,
+			Price: product.Price,
+		})
+	}
+
+	productListResponse := response.ProductListResponse{
+		Data: productResponses,
+		Pagination: response.PaginationResponse{
+			Page:       products.Pagination.Page,
+			PageSize:   products.Pagination.PageSize,
+			TotalItems: products.Pagination.TotalItems,
+			TotalPages: products.Pagination.TotalPages,
+		},
+	}
+
+	c.JSON(http.StatusOK, productListResponse)
 }
 
 func (h *ProductHandler) GetProductByID(c *gin.Context) {

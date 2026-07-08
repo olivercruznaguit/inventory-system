@@ -38,7 +38,7 @@ func (ps *ProductService) GetProducts(ctx context.Context, pagination model.Pagi
 
 	totalItems, err := ps.repository.CountProducts(ctx)
 	if err != nil {
-		return model.ProductList{}, fmt.Errorf("get products: %w", err)
+		return model.ProductList{}, fmt.Errorf("count products: %w", err)
 	}
 
 	totalPages := (totalItems + pagination.PageSize - 1) / pagination.PageSize
