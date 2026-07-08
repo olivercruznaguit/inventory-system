@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -73,8 +75,12 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
 		&product.Name,
 		&product.Price,
 	)
+
 	if err != nil {
-		return model.Product{}, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Product{}, ErrProductNotFound
+		}
+		return model.Product{}, fmt.Errorf("get product: %w", err)
 	}
 
 	return product, nil
@@ -114,7 +120,10 @@ func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Pr
 	)
 
 	if err != nil {
-		return model.Product{}, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Product{}, ErrProductNotFound
+		}
+		return model.Product{}, fmt.Errorf("update product: %w", err)
 	}
 
 	return updatedProduct, nil
@@ -127,11 +136,11 @@ func (pr *ProductRepository) DeleteProduct(ctx context.Context, id int) error {
 	`, id)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("delete product: %w", err)
 	}
 
 	if result.RowsAffected() == 0 {
-		return pgx.ErrNoRows
+		return ErrProductNotFound
 	}
 
 	return nil

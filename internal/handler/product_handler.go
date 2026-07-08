@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jackc/pgx/v5"
-
 	"github.com/gin-gonic/gin"
 	"github.com/olivercruznaguit/inventory-system/internal/handler/request"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
+	"github.com/olivercruznaguit/inventory-system/internal/repository"
 	"github.com/olivercruznaguit/inventory-system/internal/service"
 )
 
@@ -46,7 +45,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 
 	product, err := h.service.GetProductByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, repository.ErrProductNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "Product not found",
 			})
@@ -127,7 +126,7 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 
 	err = h.service.DeleteProduct(ctx, id)
 
-	if errors.Is(err, pgx.ErrNoRows) {
+	if errors.Is(err, repository.ErrProductNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "Product not found",
 		})
