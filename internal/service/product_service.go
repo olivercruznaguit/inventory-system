@@ -18,7 +18,8 @@ func NewProductService(repository *repository.ProductRepository) *ProductService
 	}
 }
 
-func (ps *ProductService) GetProducts(ctx context.Context, pagination model.Pagination) (model.ProductList, error) {
+func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductFilter) (model.ProductList, error) {
+	pagination := filter.Pagination
 	if pagination.Page < 1 {
 		pagination.Page = 1
 	}
@@ -31,12 +32,12 @@ func (ps *ProductService) GetProducts(ctx context.Context, pagination model.Pagi
 		pagination.PageSize = 100
 	}
 
-	products, err := ps.repository.GetProducts(ctx, pagination)
+	products, err := ps.repository.GetProducts(ctx, filter)
 	if err != nil {
 		return model.ProductList{}, fmt.Errorf("get products: %w", err)
 	}
 
-	totalItems, err := ps.repository.CountProducts(ctx)
+	totalItems, err := ps.repository.CountProducts(ctx, filter)
 	if err != nil {
 		return model.ProductList{}, fmt.Errorf("count products: %w", err)
 	}

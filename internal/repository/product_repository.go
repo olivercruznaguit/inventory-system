@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,19 +21,33 @@ func NewProductRepository(db *pgxpool.Pool) *ProductRepository {
 	}
 }
 
-func (pr *ProductRepository) GetProducts(ctx context.Context, pagination model.Pagination) ([]model.Product, error) {
-
+func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.ProductFilter) ([]model.Product, error) {
+	pagination := filter.Pagination
 	offset := (pagination.Page - 1) * pagination.PageSize
 	limit := pagination.PageSize
-	rows, err := pr.db.Query(ctx, `
-        SELECT
-            id,
-            name,
-            price
-        FROM products
-        ORDER BY id
-		LIMIT $1 OFFSET $2
-    `, limit, offset)
+
+	var args []any
+	var queryParts []string
+
+	queryParts = append(queryParts, "SELECT id, name, price, status FROM products")
+
+	if filter.Status != "" {
+		args = append(args, filter.Status)
+		queryParts = append(queryParts, fmt.Sprintf("WHERE status = $%d", len(args)))
+	}
+
+	queryParts = append(queryParts, "ORDER BY id")
+
+	args = append(args, limit)
+	queryParts = append(queryParts, fmt.Sprintf("LIMIT $%d", len(args)))
+
+	args = append(args, offset)
+	queryParts = append(queryParts, fmt.Sprintf("OFFSET $%d", len(args)))
+
+	queryString := strings.Join(queryParts, " ")
+
+	rows, err := pr.db.Query(ctx, queryString, args...)
+
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +63,7 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, pagination model.P
 			&product.ID,
 			&product.Name,
 			&product.Price,
+			&product.Status,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("get products: %w", err)
@@ -70,7 +86,8 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
         SELECT
             id,
             name,
-            price
+            price,
+			status
         FROM products
         WHERE id = $1
     `, id)
@@ -79,6 +96,7 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
 		&product.ID,
 		&product.Name,
 		&product.Price,
+		&product.Status,
 	)
 
 	if err != nil {
@@ -97,11 +115,12 @@ func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Pr
 	err := pr.db.QueryRow(ctx, `
         INSERT INTO products (name, price)
         VALUES ($1, $2)
-        RETURNING id, name, price
+        RETURNING id, name, price, status
     `, product.Name, product.Price).Scan(
 		&createdProduct.ID,
 		&createdProduct.Name,
 		&createdProduct.Price,
+		&createdProduct.Status,
 	)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("create product: %w", err)
@@ -117,11 +136,12 @@ func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Pr
         UPDATE products
         SET name = $1, price = $2
         WHERE id = $3
-        RETURNING id, name, price
+        RETURNING id, name, price, status
     `, product.Name, product.Price, product.ID).Scan(
 		&updatedProduct.ID,
 		&updatedProduct.Name,
 		&updatedProduct.Price,
+		&updatedProduct.Status,
 	)
 
 	if err != nil {
@@ -151,13 +171,21 @@ func (pr *ProductRepository) DeleteProduct(ctx context.Context, id int) error {
 	return nil
 }
 
-func (pr *ProductRepository) CountProducts(ctx context.Context) (int, error) {
+func (pr *ProductRepository) CountProducts(ctx context.Context, filter model.ProductFilter) (int, error) {
 	var count int
+	var queryParts []string
+	var args []any
 
-	err := pr.db.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM products
-	`).Scan(&count)
+	queryParts = append(queryParts, "SELECT COUNT(*) FROM products")
+
+	if filter.Status != "" {
+		queryParts = append(queryParts, "WHERE status = $1")
+		args = append(args, filter.Status)
+	}
+
+	queryString := strings.Join(queryParts, " ")
+
+	err := pr.db.QueryRow(ctx, queryString, args...).Scan(&count)
 
 	if err != nil {
 		return 0, fmt.Errorf("count products: %w", err)

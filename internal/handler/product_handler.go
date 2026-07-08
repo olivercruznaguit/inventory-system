@@ -28,6 +28,12 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("pageSize", "20")
+	filterStatusStr := c.Query("status")
+
+	if filterStatusStr != string(model.ProductStatusInactive) && filterStatusStr != string(model.ProductStatusActive) && filterStatusStr != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request"})
+		return
+	}
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
@@ -46,7 +52,11 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		PageSize: pageSize,
 	}
 
-	products, err := h.service.GetProducts(ctx, pagination)
+	var filter = model.ProductFilter{}
+	filter.Status = model.ProductStatus(filterStatusStr)
+	filter.Pagination = pagination
+
+	products, err := h.service.GetProducts(ctx, filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -55,9 +65,10 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	var productResponses []response.ProductResponse
 	for _, product := range products.Products {
 		productResponses = append(productResponses, response.ProductResponse{
-			ID:    product.ID,
-			Name:  product.Name,
-			Price: product.Price,
+			ID:     product.ID,
+			Name:   product.Name,
+			Price:  product.Price,
+			Status: string(product.Status),
 		})
 	}
 
