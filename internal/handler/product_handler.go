@@ -29,7 +29,9 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("pageSize", "20")
 	filterStatusStr := c.Query("status")
-	searchStr := c.Query("search")
+	search := c.Query("search")
+	sortBy := c.Query("sortBy")
+	sortOrder := c.Query("sortOrder")
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
@@ -50,13 +52,17 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 
 	filter := model.ProductFilter{
 		Status:     model.ProductStatus(filterStatusStr),
-		Search:     searchStr,
+		Search:     search,
+		SortBy:     sortBy,
+		SortOrder:  sortOrder,
 		Pagination: pagination,
 	}
 
 	products, err := h.service.GetProducts(ctx, filter)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidProductStatus) {
+		if errors.Is(err, service.ErrInvalidProductStatus) ||
+			errors.Is(err, service.ErrInvalidSortBy) ||
+			errors.Is(err, service.ErrInvalidSortOrder) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

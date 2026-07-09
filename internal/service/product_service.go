@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 	"github.com/olivercruznaguit/inventory-system/internal/repository"
@@ -29,6 +30,30 @@ func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductF
 
 	if filter.Pagination.PageSize > 100 {
 		filter.Pagination.PageSize = 100
+	}
+
+	if filter.SortBy == "" {
+		filter.SortBy = "id"
+	}
+
+	switch filter.SortBy {
+	case "id", "name", "price":
+		filter.SortBy = strings.ToLower(filter.SortBy)
+	default:
+		return model.ProductList{},
+			fmt.Errorf("get products: %w", ErrInvalidSortBy)
+	}
+
+	if filter.SortOrder == "" {
+		filter.SortOrder = "asc"
+	}
+
+	switch strings.ToLower(filter.SortOrder) {
+	case "asc", "desc":
+		filter.SortOrder = strings.ToUpper(filter.SortOrder)
+	default:
+		return model.ProductList{},
+			fmt.Errorf("get products: %w", ErrInvalidSortOrder)
 	}
 
 	if filter.Status == "" {

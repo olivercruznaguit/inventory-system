@@ -57,7 +57,7 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 		)
 	}
 
-	queryParts = append(queryParts, "ORDER BY id")
+	queryParts = append(queryParts, fmt.Sprintf("ORDER BY %s %s", filter.SortBy, filter.SortOrder))
 
 	args = append(args, limit)
 	queryParts = append(queryParts, fmt.Sprintf("LIMIT $%d", len(args)))
@@ -70,7 +70,7 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 	rows, err := pr.db.Query(ctx, queryString, args...)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get products: %w", err)
 	}
 
 	defer rows.Close()
