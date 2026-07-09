@@ -6,14 +6,29 @@ import (
 	"strings"
 
 	"github.com/olivercruznaguit/inventory-system/internal/model"
-	"github.com/olivercruznaguit/inventory-system/internal/repository"
 )
 
-type ProductService struct {
-	repository *repository.ProductRepository
+type ProductRepository interface {
+	GetProducts(ctx context.Context, filter model.ProductFilter) ([]model.Product, error)
+
+	CountProducts(ctx context.Context, filter model.ProductFilter) (int, error)
+
+	GetProductByID(ctx context.Context, id int) (model.Product, error)
+
+	CreateProduct(ctx context.Context, product model.Product) (model.Product, error)
+
+	UpdateProduct(ctx context.Context, product model.Product) (model.Product, error)
+
+	UpdateProductStatus(ctx context.Context, id int, status model.ProductStatus) (model.Product, error)
+
+	DeleteProduct(ctx context.Context, id int) error
 }
 
-func NewProductService(repository *repository.ProductRepository) *ProductService {
+type ProductService struct {
+	repository ProductRepository
+}
+
+func NewProductService(repository ProductRepository) *ProductService {
 	return &ProductService{
 		repository: repository,
 	}
