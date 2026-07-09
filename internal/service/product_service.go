@@ -51,9 +51,10 @@ func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductF
 		filter.SortBy = "id"
 	}
 
+	filter.SortBy = strings.ToLower(filter.SortBy)
 	switch filter.SortBy {
 	case "id", "name", "price":
-		filter.SortBy = strings.ToLower(filter.SortBy)
+		//valid
 	default:
 		return model.ProductList{},
 			fmt.Errorf("get products: %w", ErrInvalidSortBy)
