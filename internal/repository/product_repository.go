@@ -154,6 +154,31 @@ func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Pr
 	return updatedProduct, nil
 }
 
+func (pr *ProductRepository) UpdateProductStatus(ctx context.Context, id int, status model.ProductStatus) (model.Product, error) {
+	var updatedProduct model.Product
+
+	err := pr.db.QueryRow(ctx, `
+        UPDATE products
+        SET status = $1
+        WHERE id = $2
+        RETURNING id, name, price, status
+    `, status, id).Scan(
+		&updatedProduct.ID,
+		&updatedProduct.Name,
+		&updatedProduct.Price,
+		&updatedProduct.Status,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Product{}, ErrProductNotFound
+		}
+		return model.Product{}, fmt.Errorf("update product: %w", err)
+	}
+
+	return updatedProduct, nil
+}
+
 func (pr *ProductRepository) DeleteProduct(ctx context.Context, id int) error {
 	result, err := pr.db.Exec(ctx, `
 		DELETE FROM products

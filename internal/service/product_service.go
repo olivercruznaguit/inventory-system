@@ -80,6 +80,20 @@ func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Produ
 	return updatedProduct, nil
 }
 
+func (ps *ProductService) UpdateProductStatus(ctx context.Context, id int, status model.ProductStatus) (model.Product, error) {
+	if !status.IsValid() {
+		return model.Product{}, fmt.Errorf("update product status: %w", ErrInvalidProductStatus)
+	}
+
+	updatedProduct, err := ps.repository.UpdateProductStatus(ctx, id, status)
+	if err != nil {
+		return model.Product{}, fmt.Errorf("update product status: %w", err)
+	}
+
+	return updatedProduct, nil
+
+}
+
 func (ps *ProductService) DeleteProduct(ctx context.Context, id int) error {
 	return ps.repository.DeleteProduct(ctx, id)
 }

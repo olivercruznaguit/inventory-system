@@ -182,6 +182,54 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedProduct)
 }
 
+func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var req request.UpdateProductStatusRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request body",
+		})
+		return
+	}
+
+	status := model.ProductStatus(req.Status)
+
+	updatedProduct, err := h.service.UpdateProductStatus(ctx, id, status)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidProductStatus):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+
+		case errors.Is(err, repository.ErrProductNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Product not found",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Internal server error",
+			})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedProduct)
+
+}
+
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	ctx := c.Request.Context()
 
