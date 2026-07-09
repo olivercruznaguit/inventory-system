@@ -11,6 +11,7 @@ import (
 type fakeProductRepository struct {
 	receivedFilter   model.ProductFilter
 	getProductsCalls int
+	totalItems       int
 }
 
 func (f *fakeProductRepository) GetProducts(ctx context.Context, filter model.ProductFilter) ([]model.Product, error) {
@@ -20,17 +21,14 @@ func (f *fakeProductRepository) GetProducts(ctx context.Context, filter model.Pr
 }
 
 func (f *fakeProductRepository) CountProducts(ctx context.Context, filter model.ProductFilter) (int, error) {
-	return 0, nil
+	return f.totalItems, nil
 }
 
 func (f *fakeProductRepository) GetProductByID(ctx context.Context, id int) (model.Product, error) {
 	return model.Product{}, nil
 }
 
-func (f *fakeProductRepository) CreateProduct(
-	ctx context.Context,
-	product model.Product,
-) (model.Product, error) {
+func (f *fakeProductRepository) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	return model.Product{}, nil
 }
 
@@ -135,6 +133,83 @@ func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(
 		t.Errorf(
 			"expected repository not to be called, got %d calls",
 			repository.getProductsCalls,
+		)
+	}
+}
+
+func TestProductService_GetProducts_CalculatesTotalPages(
+	t *testing.T,
+) {
+	repository := &fakeProductRepository{
+		totalItems: 21,
+	}
+
+	service := NewProductService(repository)
+
+	filter := model.ProductFilter{
+		Pagination: model.Pagination{
+			Page:     1,
+			PageSize: 20,
+		},
+	}
+
+	productList, err := service.GetProducts(
+		context.Background(),
+		filter,
+	)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if productList.Pagination.TotalItems != 21 {
+		t.Errorf(
+			"expected 21 total items, got %d",
+			productList.Pagination.TotalItems,
+		)
+	}
+
+	if productList.Pagination.TotalPages != 2 {
+		t.Errorf(
+			"expected 2 total pages, got %d",
+			productList.Pagination.TotalPages,
+		)
+	}
+}
+
+func TestProductService_GetProducts_CapsPageSizeAt100(
+	t *testing.T,
+) {
+	repository := &fakeProductRepository{}
+	service := NewProductService(repository)
+
+	filter := model.ProductFilter{
+		Pagination: model.Pagination{
+			Page:     1,
+			PageSize: 500,
+		},
+	}
+
+	productList, err := service.GetProducts(
+		context.Background(),
+		filter,
+	)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if repository.receivedFilter.Pagination.PageSize != 100 {
+		t.Errorf(
+			"expected repository to receive page size 100, got %d",
+			repository.receivedFilter.Pagination.PageSize,
+		)
+	}
+
+	if productList.Pagination.PageSize != 100 {
+		t.Errorf(
+			"expected response page size 100, got %d",
+			productList.Pagination.PageSize,
 		)
 	}
 }
