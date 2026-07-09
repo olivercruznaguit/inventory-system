@@ -134,10 +134,10 @@ func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Pr
 
 	err := pr.db.QueryRow(ctx, `
         UPDATE products
-        SET name = $1, price = $2
-        WHERE id = $3
+        SET name = $1, price = $2, status = $3
+        WHERE id = $4
         RETURNING id, name, price, status
-    `, product.Name, product.Price, product.ID).Scan(
+    `, product.Name, product.Price, product.Status, product.ID).Scan(
 		&updatedProduct.ID,
 		&updatedProduct.Name,
 		&updatedProduct.Price,

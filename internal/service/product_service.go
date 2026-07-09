@@ -69,7 +69,15 @@ func (ps *ProductService) CreateProduct(ctx context.Context, product model.Produ
 }
 
 func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
-	return ps.repository.UpdateProduct(ctx, product)
+	if !product.Status.IsValid() {
+		return model.Product{}, fmt.Errorf("updated product: %w", ErrInvalidProductStatus)
+	}
+
+	updatedProduct, err := ps.repository.UpdateProduct(ctx, product)
+	if err != nil {
+		return model.Product{}, fmt.Errorf("update product: %w", err)
+	}
+	return updatedProduct, nil
 }
 
 func (ps *ProductService) DeleteProduct(ctx context.Context, id int) error {
