@@ -29,6 +29,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	pageSizeStr := c.DefaultQuery("pageSize", "20")
 	filterStatusStr := c.Query("status")
+	searchStr := c.Query("search")
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
@@ -49,6 +50,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 
 	filter := model.ProductFilter{
 		Status:     model.ProductStatus(filterStatusStr),
+		Search:     searchStr,
 		Pagination: pagination,
 	}
 

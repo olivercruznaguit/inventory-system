@@ -26,14 +26,35 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 	offset := (pagination.Page - 1) * pagination.PageSize
 	limit := pagination.PageSize
 
-	var args []any
 	var queryParts []string
+	var conditions []string
+	var args []any
 
 	queryParts = append(queryParts, "SELECT id, name, price, status FROM products")
 
 	if filter.Status != "" {
 		args = append(args, filter.Status)
-		queryParts = append(queryParts, fmt.Sprintf("WHERE status = $%d", len(args)))
+
+		conditions = append(
+			conditions,
+			fmt.Sprintf("status = $%d", len(args)),
+		)
+	}
+
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
+
+		conditions = append(
+			conditions,
+			fmt.Sprintf("name ILIKE $%d", len(args)),
+		)
+	}
+
+	if len(conditions) > 0 {
+		queryParts = append(
+			queryParts,
+			"WHERE "+strings.Join(conditions, " AND "),
+		)
 	}
 
 	queryParts = append(queryParts, "ORDER BY id")
@@ -199,13 +220,26 @@ func (pr *ProductRepository) DeleteProduct(ctx context.Context, id int) error {
 func (pr *ProductRepository) CountProducts(ctx context.Context, filter model.ProductFilter) (int, error) {
 	var count int
 	var queryParts []string
+	var conditions []string
 	var args []any
 
 	queryParts = append(queryParts, "SELECT COUNT(*) FROM products")
 
 	if filter.Status != "" {
-		queryParts = append(queryParts, "WHERE status = $1")
 		args = append(args, filter.Status)
+		conditions = append(conditions, fmt.Sprintf("status = $%d", len(args)))
+	}
+
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
+		conditions = append(conditions, fmt.Sprintf("name ILIKE $%d", len(args)))
+	}
+
+	if len(conditions) > 0 {
+		queryParts = append(
+			queryParts,
+			"WHERE "+strings.Join(conditions, " AND "),
+		)
 	}
 
 	queryString := strings.Join(queryParts, " ")
