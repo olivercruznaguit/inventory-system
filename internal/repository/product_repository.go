@@ -30,7 +30,7 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 	var conditions []string
 	var args []any
 
-	queryParts = append(queryParts, "SELECT id, name, price, status FROM products")
+	queryParts = append(queryParts, "SELECT id, name, price, status, created_at, updated_at FROM products")
 
 	if filter.Status != "" {
 		args = append(args, filter.Status)
@@ -85,6 +85,8 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 			&product.Name,
 			&product.Price,
 			&product.Status,
+			&product.CreatedAt,
+			&product.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("get products: %w", err)
@@ -108,7 +110,9 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
             id,
             name,
             price,
-			status
+			status,
+			created_at,
+			updated_at
         FROM products
         WHERE id = $1
     `, id)
@@ -118,6 +122,8 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
 		&product.Name,
 		&product.Price,
 		&product.Status,
+		&product.CreatedAt,
+		&product.UpdatedAt,
 	)
 
 	if err != nil {
@@ -136,12 +142,14 @@ func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Pr
 	err := pr.db.QueryRow(ctx, `
         INSERT INTO products (name, price)
         VALUES ($1, $2)
-        RETURNING id, name, price, status
+        RETURNING id, name, price, status, created_at, updated_at
     `, product.Name, product.Price).Scan(
 		&createdProduct.ID,
 		&createdProduct.Name,
 		&createdProduct.Price,
 		&createdProduct.Status,
+		&createdProduct.CreatedAt,
+		&createdProduct.UpdatedAt,
 	)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("create product: %w", err)
@@ -155,14 +163,16 @@ func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Pr
 
 	err := pr.db.QueryRow(ctx, `
         UPDATE products
-        SET name = $1, price = $2, status = $3
+        SET name = $1, price = $2, status = $3, updated_at = NOW()
         WHERE id = $4
-        RETURNING id, name, price, status
+        RETURNING id, name, price, status, created_at, updated_at
     `, product.Name, product.Price, product.Status, product.ID).Scan(
 		&updatedProduct.ID,
 		&updatedProduct.Name,
 		&updatedProduct.Price,
 		&updatedProduct.Status,
+		&updatedProduct.CreatedAt,
+		&updatedProduct.UpdatedAt,
 	)
 
 	if err != nil {
@@ -180,14 +190,16 @@ func (pr *ProductRepository) UpdateProductStatus(ctx context.Context, id int, st
 
 	err := pr.db.QueryRow(ctx, `
         UPDATE products
-        SET status = $1
+        SET status = $1, updated_at = NOW()
         WHERE id = $2
-        RETURNING id, name, price, status
+        RETURNING id, name, price, status, created_at, updated_at
     `, status, id).Scan(
 		&updatedProduct.ID,
 		&updatedProduct.Name,
 		&updatedProduct.Price,
 		&updatedProduct.Status,
+		&updatedProduct.CreatedAt,
+		&updatedProduct.UpdatedAt,
 	)
 
 	if err != nil {

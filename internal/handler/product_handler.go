@@ -73,12 +73,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 
 	var productResponses []response.ProductResponse
 	for _, product := range products.Products {
-		productResponses = append(productResponses, response.ProductResponse{
-			ID:     product.ID,
-			Name:   product.Name,
-			Price:  product.Price,
-			Status: string(product.Status),
-		})
+		productResponses = append(productResponses, response.NewProductResponse(product))
 	}
 
 	productListResponse := response.ProductListResponse{
@@ -119,7 +114,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, product)
+	c.JSON(http.StatusOK, response.NewProductResponse(product))
 }
 
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
