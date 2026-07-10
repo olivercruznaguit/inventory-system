@@ -119,3 +119,38 @@ func (cr *CategoryRepository) GetCategoryByID(ctx context.Context, id int) (mode
 
 	return category, nil
 }
+
+func (cr *CategoryRepository) UpdateCategory(ctx context.Context, category model.Category) (model.Category, error) {
+	var updatedCategory model.Category
+	err := cr.db.QueryRow(ctx,
+		`UPDATE categories SET 
+		 name = $1,
+		 updated_at = NOW() 
+		WHERE id = $2 
+		RETURNING
+		id,
+		name,
+		created_at,
+		updated_at`, category.Name, category.ID).Scan(
+		&updatedCategory.ID,
+		&updatedCategory.Name,
+		&updatedCategory.CreatedAt,
+		&updatedCategory.UpdatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Category{}, ErrCategoryNotFound
+		}
+
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return model.Category{}, ErrCategoryAlreadyExists
+		}
+
+		return model.Category{}, fmt.Errorf("update category: %w", err)
+	}
+
+	return updatedCategory, nil
+}

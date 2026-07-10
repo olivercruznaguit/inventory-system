@@ -50,9 +50,10 @@ func main() {
 	categoryService := service.NewCategoryService(categoryRepository)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 
-	router.POST("/category", categoryHandler.CreateCategory)
-	router.GET("/category", categoryHandler.GetCategories)
-	router.GET("/category/:id", categoryHandler.GetCategoryByID)
+	router.POST("/categories", categoryHandler.CreateCategory)
+	router.GET("/categories", categoryHandler.GetCategories)
+	router.GET("/categories/:id", categoryHandler.GetCategoryByID)
+	router.PUT("/categories/:id", categoryHandler.UpdateCategory)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

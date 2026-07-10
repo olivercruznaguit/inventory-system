@@ -93,3 +93,50 @@ func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response.NewCategoryResponse(category))
 }
+
+func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil || id < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		return
+	}
+
+	var req request.UpdateCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	category := model.Category{
+		ID:   uint(id),
+		Name: req.Name,
+	}
+
+	updatedCategory, err := ch.service.UpdateCategory(ctx, category)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrCategoryAlreadyExists):
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Product already exist",
+			})
+
+		case errors.Is(err, repository.ErrCategoryNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Product not found",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewCategoryResponse(updatedCategory))
+}

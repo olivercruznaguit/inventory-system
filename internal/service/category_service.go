@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 )
@@ -10,6 +11,7 @@ type CategoryRepository interface {
 	CreateCategory(ctx context.Context, category model.Category) (model.Category, error)
 	GetCategories(ctx context.Context) ([]model.Category, error)
 	GetCategoryByID(ctx context.Context, id int) (model.Category, error)
+	UpdateCategory(ctx context.Context, category model.Category) (model.Category, error)
 }
 
 type CategoryService struct {
@@ -32,4 +34,15 @@ func (cs *CategoryService) GetCategories(ctx context.Context) ([]model.Category,
 
 func (cs *CategoryService) GetCategoryByID(ctx context.Context, id int) (model.Category, error) {
 	return cs.repository.GetCategoryByID(ctx, id)
+}
+
+func (cs *CategoryService) UpdateCategory(ctx context.Context, category model.Category) (model.Category, error) {
+
+	updatedCategory, err := cs.repository.UpdateCategory(ctx, category)
+
+	if err != nil {
+		return model.Category{}, fmt.Errorf("update category: %w", err)
+	}
+
+	return updatedCategory, nil
 }
