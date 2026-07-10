@@ -123,12 +123,12 @@ func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 		switch {
 		case errors.Is(err, repository.ErrCategoryAlreadyExists):
 			c.JSON(http.StatusConflict, gin.H{
-				"error": "Product already exist",
+				"error": "Category already exists",
 			})
 
 		case errors.Is(err, repository.ErrCategoryNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
+				"error": "Category not found",
 			})
 
 		default:
@@ -139,4 +139,28 @@ func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.NewCategoryResponse(updatedCategory))
+}
+
+func (ch *CategoryHandler) DeleteCategory(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		return
+	}
+
+	err = ch.service.DeleteCategory(ctx, id)
+
+	if err != nil {
+		if errors.Is(err, repository.ErrCategoryNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

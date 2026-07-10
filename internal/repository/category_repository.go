@@ -154,3 +154,17 @@ func (cr *CategoryRepository) UpdateCategory(ctx context.Context, category model
 
 	return updatedCategory, nil
 }
+
+func (cr *CategoryRepository) DeleteCategory(ctx context.Context, id int) error {
+	result, err := cr.db.Exec(ctx, `DELETE FROM categories WHERE id = $1`, id)
+
+	if err != nil {
+		return fmt.Errorf("delete category: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrCategoryNotFound
+	}
+
+	return nil
+}

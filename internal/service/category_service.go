@@ -12,6 +12,7 @@ type CategoryRepository interface {
 	GetCategories(ctx context.Context) ([]model.Category, error)
 	GetCategoryByID(ctx context.Context, id int) (model.Category, error)
 	UpdateCategory(ctx context.Context, category model.Category) (model.Category, error)
+	DeleteCategory(ctx context.Context, id int) error
 }
 
 type CategoryService struct {
@@ -45,4 +46,8 @@ func (cs *CategoryService) UpdateCategory(ctx context.Context, category model.Ca
 	}
 
 	return updatedCategory, nil
+}
+
+func (cs *CategoryService) DeleteCategory(ctx context.Context, id int) error {
+	return cs.repository.DeleteCategory(ctx, id)
 }

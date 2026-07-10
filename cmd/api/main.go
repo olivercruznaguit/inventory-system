@@ -54,6 +54,7 @@ func main() {
 	router.GET("/categories", categoryHandler.GetCategories)
 	router.GET("/categories/:id", categoryHandler.GetCategoryByID)
 	router.PUT("/categories/:id", categoryHandler.UpdateCategory)
+	router.DELETE("/categories/:id", categoryHandler.DeleteCategory)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 
