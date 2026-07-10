@@ -33,6 +33,7 @@ func main() {
 
 	router := gin.Default()
 
+	// PRODUCTS
 	productRepository := repository.NewProductRepository(db)
 	productService := service.NewProductService(productRepository)
 	productHandler := handler.NewProductHandler(productService)
@@ -43,6 +44,13 @@ func main() {
 	router.PUT("/products/:id", productHandler.UpdateProduct)
 	router.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
 	router.DELETE("/products/:id", productHandler.DeleteProduct)
+
+	// CATEGORY
+	categoryRepository := repository.NewCategoryRepository(db)
+	categoryService := service.NewCategoryService(categoryRepository)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+
+	router.POST("/category", categoryHandler.CreateCategory)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 
