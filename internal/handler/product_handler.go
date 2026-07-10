@@ -94,7 +94,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	idStr := c.Param("id")
 
 	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if err != nil || id < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
 	}

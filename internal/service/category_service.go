@@ -8,6 +8,8 @@ import (
 
 type CategoryRepository interface {
 	CreateCategory(ctx context.Context, category model.Category) (model.Category, error)
+	GetCategories(ctx context.Context) ([]model.Category, error)
+	GetCategoryByID(ctx context.Context, id int) (model.Category, error)
 }
 
 type CategoryService struct {
@@ -20,6 +22,14 @@ func NewCategoryService(repository CategoryRepository) *CategoryService {
 	}
 }
 
-func (cr *CategoryService) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
-	return cr.repository.CreateCategory(ctx, category)
+func (cs *CategoryService) CreateCategory(ctx context.Context, category model.Category) (model.Category, error) {
+	return cs.repository.CreateCategory(ctx, category)
+}
+
+func (cs *CategoryService) GetCategories(ctx context.Context) ([]model.Category, error) {
+	return cs.repository.GetCategories(ctx)
+}
+
+func (cs *CategoryService) GetCategoryByID(ctx context.Context, id int) (model.Category, error) {
+	return cs.repository.GetCategoryByID(ctx, id)
 }
