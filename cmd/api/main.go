@@ -33,9 +33,11 @@ func main() {
 
 	router := gin.Default()
 
-	// PRODUCTS
 	productRepository := repository.NewProductRepository(db)
-	productService := service.NewProductService(productRepository)
+	categoryRepository := repository.NewCategoryRepository(db)
+
+	// PRODUCTS
+	productService := service.NewProductService(productRepository, categoryRepository)
 	productHandler := handler.NewProductHandler(productService)
 
 	router.GET("/products", productHandler.GetProducts)
@@ -46,7 +48,6 @@ func main() {
 	router.DELETE("/products/:id", productHandler.DeleteProduct)
 
 	// CATEGORY
-	categoryRepository := repository.NewCategoryRepository(db)
 	categoryService := service.NewCategoryService(categoryRepository)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 

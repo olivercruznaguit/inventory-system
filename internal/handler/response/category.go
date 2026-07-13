@@ -13,6 +13,11 @@ type CategoryResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+type ProductCategoryResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}
+
 func NewCategoryResponse(category model.Category) CategoryResponse {
 	return CategoryResponse{
 		ID:        category.ID,

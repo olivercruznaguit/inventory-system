@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 )
@@ -30,14 +31,15 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 	var conditions []string
 	var args []any
 
-	queryParts = append(queryParts, "SELECT id, name, price, status, created_at, updated_at FROM products")
+	queryParts = append(queryParts,
+		"SELECT p.id, p.name, p.price, p.status, p.created_at, p.updated_at, c.id, c.name FROM products p LEFT JOIN categories c ON p.category_id = c.id")
 
 	if filter.Status != "" {
 		args = append(args, filter.Status)
 
 		conditions = append(
 			conditions,
-			fmt.Sprintf("status = $%d", len(args)),
+			fmt.Sprintf("p.status = $%d", len(args)),
 		)
 	}
 
@@ -46,7 +48,7 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 
 		conditions = append(
 			conditions,
-			fmt.Sprintf("name ILIKE $%d", len(args)),
+			fmt.Sprintf("p.name ILIKE $%d", len(args)),
 		)
 	}
 
@@ -57,7 +59,7 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 		)
 	}
 
-	queryParts = append(queryParts, fmt.Sprintf("ORDER BY %s %s", filter.SortBy, filter.SortOrder))
+	queryParts = append(queryParts, fmt.Sprintf("ORDER BY p.%s %s", filter.SortBy, filter.SortOrder))
 
 	args = append(args, limit)
 	queryParts = append(queryParts, fmt.Sprintf("LIMIT $%d", len(args)))
@@ -79,6 +81,8 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 
 	for rows.Next() {
 		var product model.Product
+		var categoryID pgtype.Int4
+		var categoryName pgtype.Text
 
 		err := rows.Scan(
 			&product.ID,
@@ -87,9 +91,20 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 			&product.Status,
 			&product.CreatedAt,
 			&product.UpdatedAt,
+			&categoryID,
+			&categoryName,
 		)
+
 		if err != nil {
 			return nil, fmt.Errorf("get products: %w", err)
+		}
+
+		if categoryID.Valid {
+			product.Category = &model.Category{
+				ID:   uint(categoryID.Int32),
+				Name: categoryName.String,
+			}
+
 		}
 
 		products = append(products, product)
@@ -138,12 +153,17 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
 
 func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	var createdProduct model.Product
+	var categoryID any
+
+	if product.Category != nil {
+		categoryID = product.Category.ID
+	}
 
 	err := pr.db.QueryRow(ctx, `
-        INSERT INTO products (name, price)
-        VALUES ($1, $2)
+        INSERT INTO products (name, price, category_id)
+        VALUES ($1, $2, $3)
         RETURNING id, name, price, status, created_at, updated_at
-    `, product.Name, product.Price).Scan(
+    `, product.Name, product.Price, categoryID).Scan(
 		&createdProduct.ID,
 		&createdProduct.Name,
 		&createdProduct.Price,

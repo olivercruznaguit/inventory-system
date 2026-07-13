@@ -14,6 +14,25 @@ type fakeProductRepository struct {
 	totalItems       int
 }
 
+type fakeCategoryRepository struct {
+	getCategoryByIDCalls int
+	category             model.Category
+	err                  error
+}
+
+func (f *fakeCategoryRepository) GetCategoryByID(
+	ctx context.Context,
+	id int,
+) (model.Category, error) {
+	f.getCategoryByIDCalls++
+
+	if f.err != nil {
+		return model.Category{}, f.err
+	}
+
+	return f.category, nil
+}
+
 func (f *fakeProductRepository) GetProducts(ctx context.Context, filter model.ProductFilter) ([]model.Product, error) {
 	f.receivedFilter = filter
 	f.getProductsCalls++
@@ -55,9 +74,10 @@ func (f *fakeProductRepository) DeleteProduct(
 }
 
 func TestProductService_GetProducts_AppliesDefaults(t *testing.T) {
-	repository := &fakeProductRepository{}
+	productRepository := &fakeProductRepository{}
+	categoryRepository := &fakeCategoryRepository{}
 
-	service := NewProductService(repository)
+	service := NewProductService(productRepository, categoryRepository)
 
 	filter := model.ProductFilter{}
 
@@ -70,39 +90,39 @@ func TestProductService_GetProducts_AppliesDefaults(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if repository.receivedFilter.Pagination.Page != 1 {
+	if productRepository.receivedFilter.Pagination.Page != 1 {
 		t.Errorf(
 			"expected page 1, got %d",
-			repository.receivedFilter.Pagination.Page,
+			productRepository.receivedFilter.Pagination.Page,
 		)
 	}
 
-	if repository.receivedFilter.Pagination.PageSize != 20 {
+	if productRepository.receivedFilter.Pagination.PageSize != 20 {
 		t.Errorf(
 			"expected page size 20, got %d",
-			repository.receivedFilter.Pagination.PageSize,
+			productRepository.receivedFilter.Pagination.PageSize,
 		)
 	}
 
-	if repository.receivedFilter.Status != model.ProductStatusActive {
+	if productRepository.receivedFilter.Status != model.ProductStatusActive {
 		t.Errorf(
 			"expected status %s, got %s",
 			model.ProductStatusActive,
-			repository.receivedFilter.Status,
+			productRepository.receivedFilter.Status,
 		)
 	}
 
-	if repository.receivedFilter.SortBy != "id" {
+	if productRepository.receivedFilter.SortBy != "id" {
 		t.Errorf(
 			"expected sort field id, got %s",
-			repository.receivedFilter.SortBy,
+			productRepository.receivedFilter.SortBy,
 		)
 	}
 
-	if repository.receivedFilter.SortOrder != "ASC" {
+	if productRepository.receivedFilter.SortOrder != "ASC" {
 		t.Errorf(
 			"expected sort order ASC, got %s",
-			repository.receivedFilter.SortOrder,
+			productRepository.receivedFilter.SortOrder,
 		)
 	}
 }
@@ -110,8 +130,10 @@ func TestProductService_GetProducts_AppliesDefaults(t *testing.T) {
 func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(
 	t *testing.T,
 ) {
-	repository := &fakeProductRepository{}
-	service := NewProductService(repository)
+	productRepository := &fakeProductRepository{}
+	categoryRepository := &fakeCategoryRepository{}
+
+	service := NewProductService(productRepository, categoryRepository)
 
 	filter := model.ProductFilter{
 		Status: "BANANA",
@@ -129,10 +151,10 @@ func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(
 		)
 	}
 
-	if repository.getProductsCalls != 0 {
+	if productRepository.getProductsCalls != 0 {
 		t.Errorf(
 			"expected repository not to be called, got %d calls",
-			repository.getProductsCalls,
+			productRepository.getProductsCalls,
 		)
 	}
 }
@@ -140,11 +162,10 @@ func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(
 func TestProductService_GetProducts_CalculatesTotalPages(
 	t *testing.T,
 ) {
-	repository := &fakeProductRepository{
-		totalItems: 21,
-	}
+	productRepository := &fakeProductRepository{totalItems: 21}
+	categoryRepository := &fakeCategoryRepository{}
 
-	service := NewProductService(repository)
+	service := NewProductService(productRepository, categoryRepository)
 
 	filter := model.ProductFilter{
 		Pagination: model.Pagination{
@@ -180,8 +201,9 @@ func TestProductService_GetProducts_CalculatesTotalPages(
 func TestProductService_GetProducts_CapsPageSizeAt100(
 	t *testing.T,
 ) {
-	repository := &fakeProductRepository{}
-	service := NewProductService(repository)
+	productRepository := &fakeProductRepository{totalItems: 21}
+	categoryRepository := &fakeCategoryRepository{}
+	service := NewProductService(productRepository, categoryRepository)
 
 	filter := model.ProductFilter{
 		Pagination: model.Pagination{
@@ -199,10 +221,10 @@ func TestProductService_GetProducts_CapsPageSizeAt100(
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if repository.receivedFilter.Pagination.PageSize != 100 {
+	if productRepository.receivedFilter.Pagination.PageSize != 100 {
 		t.Errorf(
 			"expected repository to receive page size 100, got %d",
-			repository.receivedFilter.Pagination.PageSize,
+			productRepository.receivedFilter.Pagination.PageSize,
 		)
 	}
 

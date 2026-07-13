@@ -9,6 +9,7 @@ type Product struct {
 	Status    ProductStatus
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Category  *Category
 }
 
 type ProductList struct {

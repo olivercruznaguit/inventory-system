@@ -121,7 +121,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
 
@@ -130,8 +130,19 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		Price: req.Price,
 	}
 
+	if req.CategoryID != nil {
+		product.Category = &model.Category{
+			ID: *req.CategoryID,
+		}
+	}
+
 	createdProduct, err := h.service.CreateProduct(ctx, product)
 	if err != nil {
+		if errors.Is(err, repository.ErrCategoryNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}

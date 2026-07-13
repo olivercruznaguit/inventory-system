@@ -24,13 +24,19 @@ type ProductRepository interface {
 	DeleteProduct(ctx context.Context, id int) error
 }
 
-type ProductService struct {
-	repository ProductRepository
+type ProductCategoryRepository interface {
+	GetCategoryByID(ctx context.Context, id int) (model.Category, error)
 }
 
-func NewProductService(repository ProductRepository) *ProductService {
+type ProductService struct {
+	productRepository  ProductRepository
+	categoryRepository ProductCategoryRepository
+}
+
+func NewProductService(productRepository ProductRepository, categoryRepository ProductCategoryRepository) *ProductService {
 	return &ProductService{
-		repository: repository,
+		productRepository:  productRepository,
+		categoryRepository: categoryRepository,
 	}
 }
 
@@ -80,12 +86,12 @@ func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductF
 		return model.ProductList{}, fmt.Errorf("get products: %w", ErrInvalidProductStatus)
 	}
 
-	products, err := ps.repository.GetProducts(ctx, filter)
+	products, err := ps.productRepository.GetProducts(ctx, filter)
 	if err != nil {
 		return model.ProductList{}, fmt.Errorf("get products: %w", err)
 	}
 
-	totalItems, err := ps.repository.CountProducts(ctx, filter)
+	totalItems, err := ps.productRepository.CountProducts(ctx, filter)
 	if err != nil {
 		return model.ProductList{}, fmt.Errorf("count products: %w", err)
 	}
@@ -102,11 +108,28 @@ func (ps *ProductService) GetProducts(ctx context.Context, filter model.ProductF
 }
 
 func (ps *ProductService) GetProductByID(ctx context.Context, id int) (model.Product, error) {
-	return ps.repository.GetProductByID(ctx, id)
+	return ps.productRepository.GetProductByID(ctx, id)
 }
 
 func (ps *ProductService) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
-	return ps.repository.CreateProduct(ctx, product)
+	if product.Category != nil {
+		category, err := ps.categoryRepository.GetCategoryByID(ctx, int(product.Category.ID))
+
+		if err != nil {
+			return model.Product{}, fmt.Errorf("create product: %w", err)
+		}
+
+		product.Category = &category
+	}
+
+	createdProduct, err := ps.productRepository.CreateProduct(ctx, product)
+	if err != nil {
+		return model.Product{}, fmt.Errorf("create product: %w", err)
+	}
+
+	createdProduct.Category = product.Category
+
+	return createdProduct, nil
 }
 
 func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
@@ -114,7 +137,7 @@ func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Produ
 		return model.Product{}, fmt.Errorf("updated product: %w", ErrInvalidProductStatus)
 	}
 
-	updatedProduct, err := ps.repository.UpdateProduct(ctx, product)
+	updatedProduct, err := ps.productRepository.UpdateProduct(ctx, product)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("update product: %w", err)
 	}
@@ -126,7 +149,7 @@ func (ps *ProductService) UpdateProductStatus(ctx context.Context, id int, statu
 		return model.Product{}, fmt.Errorf("update product status: %w", ErrInvalidProductStatus)
 	}
 
-	updatedProduct, err := ps.repository.UpdateProductStatus(ctx, id, status)
+	updatedProduct, err := ps.productRepository.UpdateProductStatus(ctx, id, status)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("update product status: %w", err)
 	}
@@ -136,5 +159,5 @@ func (ps *ProductService) UpdateProductStatus(ctx context.Context, id int, statu
 }
 
 func (ps *ProductService) DeleteProduct(ctx context.Context, id int) error {
-	return ps.repository.DeleteProduct(ctx, id)
+	return ps.productRepository.DeleteProduct(ctx, id)
 }

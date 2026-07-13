@@ -7,12 +7,13 @@ import (
 )
 
 type ProductResponse struct {
-	ID        uint      `json:"id"`
-	Name      string    `json:"name"`
-	Price     float64   `json:"price"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        uint                     `json:"id"`
+	Name      string                   `json:"name"`
+	Price     float64                  `json:"price"`
+	Status    string                   `json:"status"`
+	Category  *ProductCategoryResponse `json:"category,omitempty"`
+	CreatedAt time.Time                `json:"createdAt"`
+	UpdatedAt time.Time                `json:"updatedAt"`
 }
 
 type PaginationResponse struct {
@@ -28,7 +29,7 @@ type ProductListResponse struct {
 }
 
 func NewProductResponse(product model.Product) ProductResponse {
-	return ProductResponse{
+	productResponse := ProductResponse{
 		ID:        product.ID,
 		Name:      product.Name,
 		Price:     product.Price,
@@ -36,4 +37,13 @@ func NewProductResponse(product model.Product) ProductResponse {
 		CreatedAt: product.CreatedAt,
 		UpdatedAt: product.UpdatedAt,
 	}
+
+	if product.Category != nil {
+		productResponse.Category = &ProductCategoryResponse{
+			ID:   product.Category.ID,
+			Name: product.Category.Name,
+		}
+	}
+
+	return productResponse
 }
