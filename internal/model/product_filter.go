@@ -6,4 +6,5 @@ type ProductFilter struct {
 	Status     ProductStatus
 	SortBy     string
 	SortOrder  string
+	CategoryID *uint
 }

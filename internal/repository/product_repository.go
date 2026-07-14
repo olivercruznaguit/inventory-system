@@ -52,6 +52,12 @@ func (pr *ProductRepository) GetProducts(ctx context.Context, filter model.Produ
 		)
 	}
 
+	if filter.CategoryID != nil {
+		args = append(args, *filter.CategoryID)
+
+		conditions = append(conditions, fmt.Sprintf("p.category_id = $%d", len(args)))
+	}
+
 	if len(conditions) > 0 {
 		queryParts = append(
 			queryParts,
@@ -270,6 +276,12 @@ func (pr *ProductRepository) CountProducts(ctx context.Context, filter model.Pro
 	if filter.Search != "" {
 		args = append(args, "%"+filter.Search+"%")
 		conditions = append(conditions, fmt.Sprintf("name ILIKE $%d", len(args)))
+	}
+
+	if filter.CategoryID != nil {
+		args = append(args, *filter.CategoryID)
+
+		conditions = append(conditions, fmt.Sprintf("category_id = $%d", len(args)))
 	}
 
 	if len(conditions) > 0 {

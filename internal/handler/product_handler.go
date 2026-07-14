@@ -30,6 +30,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	pageSizeStr := c.DefaultQuery("pageSize", "20")
 	filterStatusStr := c.Query("status")
 	search := c.Query("search")
+	categoryIdStr := c.Query("categoryId")
 	sortBy := c.Query("sortBy")
 	sortOrder := c.Query("sortOrder")
 
@@ -45,6 +46,18 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		return
 	}
 
+	var categoryID *uint
+	if categoryIdStr != "" {
+		categoryIdParsed, err := strconv.Atoi(categoryIdStr)
+		if err != nil || categoryIdParsed < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+			return
+		}
+
+		categoryIDCasted := uint(categoryIdParsed)
+		categoryID = &categoryIDCasted
+	}
+
 	pagination := model.Pagination{
 		Page:     page,
 		PageSize: pageSize,
@@ -56,6 +69,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		SortBy:     sortBy,
 		SortOrder:  sortOrder,
 		Pagination: pagination,
+		CategoryID: categoryID,
 	}
 
 	products, err := h.service.GetProducts(ctx, filter)
