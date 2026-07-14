@@ -6,12 +6,15 @@ import (
 	"testing"
 
 	"github.com/olivercruznaguit/inventory-system/internal/model"
+	"github.com/olivercruznaguit/inventory-system/internal/repository"
 )
 
 type fakeProductRepository struct {
-	receivedFilter   model.ProductFilter
-	getProductsCalls int
-	totalItems       int
+	receivedFilter     model.ProductFilter
+	getProductsCalls   int
+	createProductCalls int
+	totalItems         int
+	createdProduct     model.Product
 }
 
 type fakeCategoryRepository struct {
@@ -20,10 +23,7 @@ type fakeCategoryRepository struct {
 	err                  error
 }
 
-func (f *fakeCategoryRepository) GetCategoryByID(
-	ctx context.Context,
-	id int,
-) (model.Category, error) {
+func (f *fakeCategoryRepository) GetCategoryByID(ctx context.Context, id int) (model.Category, error) {
 	f.getCategoryByIDCalls++
 
 	if f.err != nil {
@@ -48,28 +48,19 @@ func (f *fakeProductRepository) GetProductByID(ctx context.Context, id int) (mod
 }
 
 func (f *fakeProductRepository) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	f.createProductCalls++
+	return f.createdProduct, nil
+}
+
+func (f *fakeProductRepository) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	return model.Product{}, nil
 }
 
-func (f *fakeProductRepository) UpdateProduct(
-	ctx context.Context,
-	product model.Product,
-) (model.Product, error) {
+func (f *fakeProductRepository) UpdateProductStatus(ctx context.Context, id int, status model.ProductStatus) (model.Product, error) {
 	return model.Product{}, nil
 }
 
-func (f *fakeProductRepository) UpdateProductStatus(
-	ctx context.Context,
-	id int,
-	status model.ProductStatus,
-) (model.Product, error) {
-	return model.Product{}, nil
-}
-
-func (f *fakeProductRepository) DeleteProduct(
-	ctx context.Context,
-	id int,
-) error {
+func (f *fakeProductRepository) DeleteProduct(ctx context.Context, id int) error {
 	return nil
 }
 
@@ -127,9 +118,7 @@ func TestProductService_GetProducts_AppliesDefaults(t *testing.T) {
 	}
 }
 
-func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(
-	t *testing.T,
-) {
+func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(t *testing.T) {
 	productRepository := &fakeProductRepository{}
 	categoryRepository := &fakeCategoryRepository{}
 
@@ -159,9 +148,7 @@ func TestProductService_GetProducts_ReturnsErrorForInvalidStatus(
 	}
 }
 
-func TestProductService_GetProducts_CalculatesTotalPages(
-	t *testing.T,
-) {
+func TestProductService_GetProducts_CalculatesTotalPages(t *testing.T) {
 	productRepository := &fakeProductRepository{totalItems: 21}
 	categoryRepository := &fakeCategoryRepository{}
 
@@ -198,9 +185,7 @@ func TestProductService_GetProducts_CalculatesTotalPages(
 	}
 }
 
-func TestProductService_GetProducts_CapsPageSizeAt100(
-	t *testing.T,
-) {
+func TestProductService_GetProducts_CapsPageSizeAt100(t *testing.T) {
 	productRepository := &fakeProductRepository{totalItems: 21}
 	categoryRepository := &fakeCategoryRepository{}
 	service := NewProductService(productRepository, categoryRepository)
@@ -234,4 +219,96 @@ func TestProductService_GetProducts_CapsPageSizeAt100(
 			productList.Pagination.PageSize,
 		)
 	}
+}
+
+func TestProductService_CreateProduct_DoesNotValidateCategoryWhenCategoryIsNil(t *testing.T) {
+	productRepository := &fakeProductRepository{
+		createdProduct: model.Product{
+			ID:    1,
+			Name:  "BANANA",
+			Price: 30000,
+		},
+	}
+	categoryRepository := &fakeCategoryRepository{}
+
+	service := NewProductService(productRepository, categoryRepository)
+
+	product := model.Product{
+		Name:  "BANANA",
+		Price: 30000,
+	}
+
+	createdProduct, err := service.CreateProduct(
+		context.Background(),
+		product,
+	)
+
+	if createdProduct.ID != 1 {
+		t.Errorf("expected product ID 1, got %d", createdProduct.ID)
+	}
+
+	if categoryRepository.getCategoryByIDCalls != 0 {
+		t.Errorf(
+			"expected repository not to be called, got %d calls",
+			categoryRepository.getCategoryByIDCalls,
+		)
+	}
+
+	if productRepository.createProductCalls != 1 {
+		t.Errorf(
+			"expected repository to be called, got %d calls",
+			productRepository.createProductCalls,
+		)
+	}
+
+	if createdProduct.Category != nil {
+		t.Errorf(
+			"expected category to be nil",
+		)
+	}
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestProductService_CreateProduct_ReturnsErrorWhenCategoryDoesNotExist(t *testing.T) {
+	productRepository := &fakeProductRepository{}
+	categoryRepository := &fakeCategoryRepository{
+		err: repository.ErrCategoryNotFound,
+	}
+
+	service := NewProductService(productRepository, categoryRepository)
+
+	product := model.Product{
+		Price: 30000,
+		Name:  "BANANA",
+		Category: &model.Category{
+			ID: 2,
+		},
+	}
+
+	product, err := service.CreateProduct(context.Background(), product)
+
+	if categoryRepository.getCategoryByIDCalls != 1 {
+		t.Errorf(
+			"expected repository to be called, got %d calls",
+			categoryRepository.getCategoryByIDCalls,
+		)
+	}
+
+	if productRepository.createProductCalls != 0 {
+		t.Errorf(
+			"expected repository not to be called, got %d calls",
+			productRepository.createProductCalls,
+		)
+	}
+
+	if !errors.Is(err, repository.ErrCategoryNotFound) {
+		t.Errorf(
+			"expected err %s, got %s",
+			repository.ErrCategoryNotFound, err.Error(),
+		)
+	}
+
 }
