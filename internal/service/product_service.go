@@ -134,13 +134,26 @@ func (ps *ProductService) CreateProduct(ctx context.Context, product model.Produ
 
 func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	if !product.Status.IsValid() {
-		return model.Product{}, fmt.Errorf("updated product: %w", ErrInvalidProductStatus)
+		return model.Product{}, fmt.Errorf("update product: %w", ErrInvalidProductStatus)
+	}
+
+	if product.Category != nil {
+		category, err := ps.categoryRepository.GetCategoryByID(ctx, int(product.Category.ID))
+
+		if err != nil {
+			return model.Product{}, fmt.Errorf("update product: %w", err)
+		}
+
+		product.Category = &category
 	}
 
 	updatedProduct, err := ps.productRepository.UpdateProduct(ctx, product)
 	if err != nil {
 		return model.Product{}, fmt.Errorf("update product: %w", err)
 	}
+
+	updatedProduct.Category = product.Category
+
 	return updatedProduct, nil
 }
 

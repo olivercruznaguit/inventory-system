@@ -155,7 +155,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if err != nil || id < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
 	}
@@ -173,6 +173,12 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		Status: model.ProductStatus(req.Status),
 	}
 
+	if req.CategoryID != nil {
+		product.Category = &model.Category{
+			ID: *req.CategoryID,
+		}
+	}
+
 	updatedProduct, err := h.service.UpdateProduct(ctx, product)
 	if err != nil {
 		switch {
@@ -184,6 +190,11 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		case errors.Is(err, repository.ErrProductNotFound):
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": "Product not found",
+			})
+
+		case errors.Is(err, repository.ErrCategoryNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Category not found",
 			})
 
 		default:

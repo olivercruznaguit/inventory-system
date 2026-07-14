@@ -180,13 +180,18 @@ func (pr *ProductRepository) CreateProduct(ctx context.Context, product model.Pr
 
 func (pr *ProductRepository) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
 	var updatedProduct model.Product
+	var categoryID any
+
+	if product.Category != nil {
+		categoryID = product.Category.ID
+	}
 
 	err := pr.db.QueryRow(ctx, `
         UPDATE products
-        SET name = $1, price = $2, status = $3, updated_at = NOW()
-        WHERE id = $4
+        SET name = $1, price = $2, status = $3, category_id = $4, updated_at = NOW()
+        WHERE id = $5
         RETURNING id, name, price, status, created_at, updated_at
-    `, product.Name, product.Price, product.Status, product.ID).Scan(
+    `, product.Name, product.Price, product.Status, categoryID, product.ID).Scan(
 		&updatedProduct.ID,
 		&updatedProduct.Name,
 		&updatedProduct.Price,
