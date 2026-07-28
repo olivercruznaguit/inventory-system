@@ -140,8 +140,9 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	}
 
 	product := model.Product{
-		Name:  req.Name,
-		Price: req.Price,
+		Name:         req.Name,
+		Price:        req.Price,
+		MinimumStock: req.MinimumStock,
 	}
 
 	if req.CategoryID != nil {
@@ -152,6 +153,11 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	createdProduct, err := h.service.CreateProduct(ctx, product)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidProductMinimumStock) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product minimum stock"})
+			return
+		}
+
 		if errors.Is(err, repository.ErrCategoryNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
 			return
@@ -181,10 +187,11 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	product := model.Product{
-		ID:     uint(id),
-		Name:   req.Name,
-		Price:  req.Price,
-		Status: model.ProductStatus(req.Status),
+		ID:           uint(id),
+		Name:         req.Name,
+		Price:        req.Price,
+		MinimumStock: req.MinimumStock,
+		Status:       model.ProductStatus(req.Status),
 	}
 
 	if req.CategoryID != nil {
@@ -196,9 +203,15 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	updatedProduct, err := h.service.UpdateProduct(ctx, product)
 	if err != nil {
 		switch {
+
+		case errors.Is(err, service.ErrInvalidProductMinimumStock):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid product minimum stock",
+			})
+
 		case errors.Is(err, service.ErrInvalidProductStatus):
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
+				"error": "Invalid product status",
 			})
 
 		case errors.Is(err, repository.ErrProductNotFound):
@@ -294,4 +307,95 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *ProductHandler) StockIn(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var req request.StockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	request := model.StockRequest{
+		Quantity: req.Quantity,
+	}
+
+	updatedProduct, err := h.service.StockIn(ctx, id, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidProductQuantity):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid product quantity",
+			})
+
+		case errors.Is(err, repository.ErrProductNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Product not found",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewStockResponse(updatedProduct))
+}
+
+func (h *ProductHandler) StockOut(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var req request.StockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	request := model.StockRequest{
+		Quantity: req.Quantity,
+	}
+
+	updatedProduct, err := h.service.StockOut(ctx, id, request)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidProductQuantity):
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid product quantity",
+			})
+
+		case errors.Is(err, repository.ErrInsufficientStock):
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Insufficient stock",
+			})
+
+		case errors.Is(err, repository.ErrProductNotFound):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Product not found",
+			})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewStockResponse(updatedProduct))
 }

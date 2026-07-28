@@ -7,13 +7,15 @@ import (
 )
 
 type ProductResponse struct {
-	ID        uint                     `json:"id"`
-	Name      string                   `json:"name"`
-	Price     float64                  `json:"price"`
-	Status    string                   `json:"status"`
-	Category  *ProductCategoryResponse `json:"category,omitempty"`
-	CreatedAt time.Time                `json:"createdAt"`
-	UpdatedAt time.Time                `json:"updatedAt"`
+	ID           uint                     `json:"id"`
+	Name         string                   `json:"name"`
+	Price        float64                  `json:"price"`
+	Status       string                   `json:"status"`
+	Quantity     int                      `json:"quantity"`
+	MinimumStock int                      `json:"minimumStock"`
+	Category     *ProductCategoryResponse `json:"category,omitempty"`
+	CreatedAt    time.Time                `json:"createdAt"`
+	UpdatedAt    time.Time                `json:"updatedAt"`
 }
 
 type PaginationResponse struct {
@@ -28,14 +30,23 @@ type ProductListResponse struct {
 	Pagination PaginationResponse `json:"pagination"`
 }
 
+type StockResponse struct {
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	Quantity     int    `json:"quantity"`
+	MinimumStock int    `json:"minimumStock"`
+}
+
 func NewProductResponse(product model.Product) ProductResponse {
 	productResponse := ProductResponse{
-		ID:        product.ID,
-		Name:      product.Name,
-		Price:     product.Price,
-		Status:    string(product.Status),
-		CreatedAt: product.CreatedAt,
-		UpdatedAt: product.UpdatedAt,
+		ID:           product.ID,
+		Name:         product.Name,
+		Price:        product.Price,
+		Status:       string(product.Status),
+		Quantity:     product.Quantity,
+		MinimumStock: product.MinimumStock,
+		CreatedAt:    product.CreatedAt,
+		UpdatedAt:    product.UpdatedAt,
 	}
 
 	if product.Category != nil {
@@ -46,4 +57,13 @@ func NewProductResponse(product model.Product) ProductResponse {
 	}
 
 	return productResponse
+}
+
+func NewStockResponse(product model.Product) StockResponse {
+	return StockResponse{
+		ID:           product.ID,
+		Name:         product.Name,
+		Quantity:     product.Quantity,
+		MinimumStock: product.MinimumStock,
+	}
 }

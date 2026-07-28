@@ -43,6 +43,8 @@ func main() {
 	router.GET("/products", productHandler.GetProducts)
 	router.GET("/products/:id", productHandler.GetProductByID)
 	router.POST("/products", productHandler.CreateProduct)
+	router.POST("/products/:id/stock-in", productHandler.StockIn)
+	router.POST("/products/:id/stock-out", productHandler.StockOut)
 	router.PUT("/products/:id", productHandler.UpdateProduct)
 	router.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
 	router.DELETE("/products/:id", productHandler.DeleteProduct)

@@ -22,6 +22,10 @@ type ProductRepository interface {
 	UpdateProductStatus(ctx context.Context, id int, status model.ProductStatus) (model.Product, error)
 
 	DeleteProduct(ctx context.Context, id int) error
+
+	StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error)
+
+	StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error)
 }
 
 type ProductCategoryRepository interface {
@@ -112,6 +116,10 @@ func (ps *ProductService) GetProductByID(ctx context.Context, id int) (model.Pro
 }
 
 func (ps *ProductService) CreateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	if product.MinimumStock < 0 {
+		return model.Product{}, fmt.Errorf("create product: %w", ErrInvalidProductMinimumStock)
+	}
+
 	if product.Category != nil {
 		category, err := ps.categoryRepository.GetCategoryByID(ctx, int(product.Category.ID))
 
@@ -133,6 +141,10 @@ func (ps *ProductService) CreateProduct(ctx context.Context, product model.Produ
 }
 
 func (ps *ProductService) UpdateProduct(ctx context.Context, product model.Product) (model.Product, error) {
+	if product.MinimumStock < 0 {
+		return model.Product{}, fmt.Errorf("update product: %w", ErrInvalidProductMinimumStock)
+	}
+
 	if !product.Status.IsValid() {
 		return model.Product{}, fmt.Errorf("update product: %w", ErrInvalidProductStatus)
 	}
@@ -173,4 +185,30 @@ func (ps *ProductService) UpdateProductStatus(ctx context.Context, id int, statu
 
 func (ps *ProductService) DeleteProduct(ctx context.Context, id int) error {
 	return ps.productRepository.DeleteProduct(ctx, id)
+}
+
+func (ps *ProductService) StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
+	if request.Quantity <= 0 {
+		return model.Product{}, fmt.Errorf("stock in: %w", ErrInvalidProductQuantity)
+	}
+
+	updatedProduct, err := ps.productRepository.StockIn(ctx, productID, request)
+	if err != nil {
+		return model.Product{}, fmt.Errorf("stock in: %w", err)
+	}
+
+	return updatedProduct, nil
+}
+
+func (ps *ProductService) StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
+	if request.Quantity <= 0 {
+		return model.Product{}, fmt.Errorf("stock out: %w", ErrInvalidProductQuantity)
+	}
+
+	updatedProduct, err := ps.productRepository.StockOut(ctx, productID, request)
+	if err != nil {
+		return model.Product{}, fmt.Errorf("stock out: %w", err)
+	}
+
+	return updatedProduct, nil
 }

@@ -64,6 +64,14 @@ func (f *fakeProductRepository) DeleteProduct(ctx context.Context, id int) error
 	return nil
 }
 
+func (f *fakeProductRepository) StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
+	return model.Product{}, nil
+}
+
+func (f *fakeProductRepository) StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
+	return model.Product{}, nil
+}
+
 func TestProductService_GetProducts_AppliesDefaults(t *testing.T) {
 	productRepository := &fakeProductRepository{}
 	categoryRepository := &fakeCategoryRepository{}
