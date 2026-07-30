@@ -8,15 +8,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/olivercruznaguit/inventory-system/internal/model"
 )
 
 type ProductRepository struct {
-	db *pgxpool.Pool
+	db DBTX
 }
 
-func NewProductRepository(db *pgxpool.Pool) *ProductRepository {
+func NewProductRepository(db DBTX) *ProductRepository {
 	return &ProductRepository{
 		db: db,
 	}
@@ -179,6 +178,45 @@ func (pr *ProductRepository) GetProductByID(ctx context.Context, id int) (model.
 		}
 
 	}
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Product{}, ErrProductNotFound
+		}
+		return model.Product{}, fmt.Errorf("get product: %w", err)
+	}
+
+	return product, nil
+}
+
+func (pr *ProductRepository) GetProductByIDForUpdate(ctx context.Context, id int) (model.Product, error) {
+	var product model.Product
+
+	row := pr.db.QueryRow(ctx, `
+        SELECT
+            id,
+            name,
+            price,
+			status,
+			quantity, 
+			minimum_stock,
+			created_at,
+			updated_at
+        FROM products
+		WHERE id = $1 
+		FOR UPDATE
+    `, id)
+
+	err := row.Scan(
+		&product.ID,
+		&product.Name,
+		&product.Price,
+		&product.Status,
+		&product.Quantity,
+		&product.MinimumStock,
+		&product.CreatedAt,
+		&product.UpdatedAt,
+	)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -363,90 +401,109 @@ func (pr *ProductRepository) CountProducts(ctx context.Context, filter model.Pro
 	return count, nil
 }
 
-func (pr *ProductRepository) StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
-	var updatedProduct model.Product
+// func (pr *ProductRepository) StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
+// 	var updatedProduct model.Product
 
-	err := pr.db.QueryRow(ctx, `
-        UPDATE products
-		SET quantity = quantity + $1,
+// 	err := pr.db.QueryRow(ctx, `
+//         UPDATE products
+// 		SET quantity = quantity + $1,
+// 			updated_at = NOW()
+// 		WHERE id = $2
+// 		RETURNING
+// 			id,
+// 			name,
+// 			price,
+// 			status,
+// 			quantity,
+// 			minimum_stock,
+// 			created_at,
+// 			updated_at
+// 		`, request.Quantity, productID).Scan(
+// 		&updatedProduct.ID,
+// 		&updatedProduct.Name,
+// 		&updatedProduct.Price,
+// 		&updatedProduct.Status,
+// 		&updatedProduct.Quantity,
+// 		&updatedProduct.MinimumStock,
+// 		&updatedProduct.CreatedAt,
+// 		&updatedProduct.UpdatedAt,
+// 	)
+
+// 	if err != nil {
+// 		if errors.Is(err, pgx.ErrNoRows) {
+// 			return model.Product{}, ErrProductNotFound
+// 		}
+// 		return model.Product{}, fmt.Errorf("stock in: %w", err)
+// 	}
+
+// 	return updatedProduct, nil
+// }
+
+// func (pr *ProductRepository) StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
+// 	var updatedProduct model.Product
+
+// 	err := pr.db.QueryRow(ctx, `
+//         UPDATE products
+// 		SET quantity = quantity - $1,
+// 			updated_at = NOW()
+// 		WHERE id = $2
+// 			AND quantity >= $1
+// 		RETURNING
+// 			id,
+// 			name,
+// 			price,
+// 			status,
+// 			quantity,
+// 			minimum_stock,
+// 			created_at,
+// 			updated_at
+// 		`, request.Quantity, productID).Scan(
+// 		&updatedProduct.ID,
+// 		&updatedProduct.Name,
+// 		&updatedProduct.Price,
+// 		&updatedProduct.Status,
+// 		&updatedProduct.Quantity,
+// 		&updatedProduct.MinimumStock,
+// 		&updatedProduct.CreatedAt,
+// 		&updatedProduct.UpdatedAt,
+// 	)
+
+// 	if err != nil {
+// 		if errors.Is(err, pgx.ErrNoRows) {
+// 			_, err := pr.GetProductByID(ctx, productID)
+
+// 			if err != nil {
+// 				if errors.Is(err, ErrProductNotFound) {
+// 					return model.Product{}, ErrProductNotFound
+// 				}
+
+// 				return model.Product{}, fmt.Errorf("verify product after stock out: %w", err)
+// 			}
+
+// 			return model.Product{}, ErrInsufficientStock
+// 		}
+
+// 		return model.Product{}, fmt.Errorf("stock out: %w", err)
+// 	}
+
+// 	return updatedProduct, nil
+// }
+
+func (pr *ProductRepository) UpdateProductQuantity(ctx context.Context, productID int, newQuantity int) error {
+	cmdTag, err := pr.db.Exec(ctx, `
+       UPDATE products
+		SET quantity = $1,
 			updated_at = NOW()
-		WHERE id = $2
-		RETURNING 
-			id, 
-			name, 
-			price, 
-			status, 
-			quantity, 
-			minimum_stock, 
-			created_at, 
-			updated_at
-		`, request.Quantity, productID).Scan(
-		&updatedProduct.ID,
-		&updatedProduct.Name,
-		&updatedProduct.Price,
-		&updatedProduct.Status,
-		&updatedProduct.Quantity,
-		&updatedProduct.MinimumStock,
-		&updatedProduct.CreatedAt,
-		&updatedProduct.UpdatedAt,
-	)
+		WHERE id = $2;
+    `, newQuantity, productID)
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Product{}, ErrProductNotFound
-		}
-		return model.Product{}, fmt.Errorf("stock in: %w", err)
+		return fmt.Errorf("update product quantity: %w", err)
 	}
 
-	return updatedProduct, nil
-}
-
-func (pr *ProductRepository) StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
-	var updatedProduct model.Product
-
-	err := pr.db.QueryRow(ctx, `
-        UPDATE products
-		SET quantity = quantity - $1,
-			updated_at = NOW()
-		WHERE id = $2
-			AND quantity >= $1
-		RETURNING 
-			id, 
-			name, 
-			price, 
-			status, 
-			quantity, 
-			minimum_stock, 
-			created_at, 
-			updated_at
-		`, request.Quantity, productID).Scan(
-		&updatedProduct.ID,
-		&updatedProduct.Name,
-		&updatedProduct.Price,
-		&updatedProduct.Status,
-		&updatedProduct.Quantity,
-		&updatedProduct.MinimumStock,
-		&updatedProduct.CreatedAt,
-		&updatedProduct.UpdatedAt,
-	)
-
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			_, err := pr.GetProductByID(ctx, productID)
-
-			if err != nil {
-				if errors.Is(err, ErrProductNotFound) {
-					return model.Product{}, ErrProductNotFound
-				}
-
-				return model.Product{}, fmt.Errorf("verify product after stock out: %w", err)
-			}
-
-			return model.Product{}, ErrInsufficientStock
-		}
-
-		return model.Product{}, fmt.Errorf("stock out: %w", err)
+	if cmdTag.RowsAffected() == 0 {
+		return ErrProductNotFound
 	}
 
-	return updatedProduct, nil
+	return nil
 }

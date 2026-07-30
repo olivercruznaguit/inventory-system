@@ -8,4 +8,5 @@ var (
 	ErrInvalidSortOrder           = errors.New("invalid sort order")
 	ErrInvalidProductQuantity     = errors.New("invalid product quantity")
 	ErrInvalidProductMinimumStock = errors.New("invalid product minimum stock")
+	ErrInsufficientStock          = errors.New("insufficient stock")
 )

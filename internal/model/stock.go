@@ -1,5 +1,7 @@
 package model
 
 type StockRequest struct {
-	Quantity int
+	ProductID int
+	Quantity  int
+	Reason    *string
 }

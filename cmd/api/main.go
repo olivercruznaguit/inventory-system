@@ -33,26 +33,29 @@ func main() {
 
 	router := gin.Default()
 
-	productRepository := repository.NewProductRepository(db)
-	categoryRepository := repository.NewCategoryRepository(db)
+	productRepository := repository.NewProductRepository(db.DB())
+	categoryRepository := repository.NewCategoryRepository(db.DB())
 
-	// PRODUCTS
 	productService := service.NewProductService(productRepository, categoryRepository)
 	productHandler := handler.NewProductHandler(productService)
 
+	categoryService := service.NewCategoryService(categoryRepository)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+
+	inventoryService := service.NewInventoryService(db)
+	inventoryHandler := handler.NewInventoryHandler(inventoryService)
+
+	// PRODUCTS
 	router.GET("/products", productHandler.GetProducts)
 	router.GET("/products/:id", productHandler.GetProductByID)
 	router.POST("/products", productHandler.CreateProduct)
-	router.POST("/products/:id/stock-in", productHandler.StockIn)
-	router.POST("/products/:id/stock-out", productHandler.StockOut)
+	router.POST("/products/:id/stock-in", inventoryHandler.StockIn)
+	router.POST("/products/:id/stock-out", inventoryHandler.StockOut)
 	router.PUT("/products/:id", productHandler.UpdateProduct)
 	router.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
 	router.DELETE("/products/:id", productHandler.DeleteProduct)
 
 	// CATEGORY
-	categoryService := service.NewCategoryService(categoryRepository)
-	categoryHandler := handler.NewCategoryHandler(categoryService)
-
 	router.POST("/categories", categoryHandler.CreateCategory)
 	router.GET("/categories", categoryHandler.GetCategories)
 	router.GET("/categories/:id", categoryHandler.GetCategoryByID)
