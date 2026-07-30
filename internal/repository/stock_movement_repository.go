@@ -40,3 +40,54 @@ func (sr *StockMovementRepository) Create(ctx context.Context, movement *model.S
 
 	return nil
 }
+
+func (sr *StockMovementRepository) GetByProductID(ctx context.Context, productID int) ([]model.StockMovement, error) {
+	var stockMovements []model.StockMovement
+
+	rows, err := sr.db.Query(ctx, `
+	SELECT 
+		id,
+		type,
+		product_id,
+		quantity,
+		remaining_quantity,
+		reason,
+		created_at
+	FROM
+		stock_movements
+	WHERE product_id = $1
+	ORDER BY created_at DESC
+	`, productID)
+
+	if err != nil {
+		return nil, fmt.Errorf("get stock movements by product id: %w", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var stockMovement model.StockMovement
+
+		err := rows.Scan(
+			&stockMovement.ID,
+			&stockMovement.Type,
+			&stockMovement.ProductID,
+			&stockMovement.Quantity,
+			&stockMovement.RemainingQuantity,
+			&stockMovement.Reason,
+			&stockMovement.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("get stock movements by product id: %w", err)
+		}
+
+		stockMovements = append(stockMovements, stockMovement)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("get stock movements by product id: %w", err)
+	}
+
+	return stockMovements, nil
+}

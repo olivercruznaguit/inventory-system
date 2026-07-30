@@ -112,3 +112,37 @@ func (h *InventoryHandler) StockOut(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response.NewStockResponse(updatedProduct))
 }
+
+func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idStr := c.Param("id")
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	stockMovements, err := h.service.GetStockMovements(ctx, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrProductNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	stockResponses := make([]response.StockMovementResponse, 0, len(stockMovements))
+	for _, stock := range stockMovements {
+		stockResponses = append(stockResponses, response.NewStockMovementResponse(stock))
+	}
+
+	stockResponse := response.StockMovementListResponse{
+		Data: stockResponses,
+	}
+
+	c.JSON(http.StatusOK, stockResponse)
+}

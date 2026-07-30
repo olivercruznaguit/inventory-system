@@ -119,3 +119,15 @@ func (s *InventoryService) StockOut(ctx context.Context, request model.StockRequ
 
 	return product, nil
 }
+
+func (s *InventoryService) GetStockMovements(ctx context.Context, productID int) ([]model.StockMovement, error) {
+	productRepo := repository.NewProductRepository(s.db.DB())
+	movementRepo := repository.NewStockMovementRepository(s.db.DB())
+
+	_, err := productRepo.GetProductByID(ctx, productID)
+	if err != nil {
+		return []model.StockMovement{}, err
+	}
+
+	return movementRepo.GetByProductID(ctx, productID)
+}

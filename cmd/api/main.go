@@ -62,6 +62,9 @@ func main() {
 	router.PUT("/categories/:id", categoryHandler.UpdateCategory)
 	router.DELETE("/categories/:id", categoryHandler.DeleteCategory)
 
+	// INVENTORY
+	router.GET("/products/:id/stock-movements", inventoryHandler.GetStockMovements)
+
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 
 	if err := router.Run(":" + cfg.App.Port); err != nil {
