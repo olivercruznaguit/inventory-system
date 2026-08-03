@@ -131,3 +131,9 @@ func (s *InventoryService) GetStockMovements(ctx context.Context, productID int)
 
 	return movementRepo.GetByProductID(ctx, productID)
 }
+
+func (s *InventoryService) GetInventoryDashboard(ctx context.Context) (model.InventoryDashboard, error) {
+	productRepo := repository.NewProductRepository(s.db.DB())
+
+	return productRepo.GetInventoryDashboard(ctx)
+}

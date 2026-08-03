@@ -182,29 +182,3 @@ func (ps *ProductService) UpdateProductStatus(ctx context.Context, id int, statu
 func (ps *ProductService) DeleteProduct(ctx context.Context, id int) error {
 	return ps.productRepository.DeleteProduct(ctx, id)
 }
-
-// func (ps *ProductService) StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
-// 	if request.Quantity <= 0 {
-// 		return model.Product{}, fmt.Errorf("stock in: %w", ErrInvalidProductQuantity)
-// 	}
-
-// 	updatedProduct, err := ps.productRepository.StockIn(ctx, productID, request)
-// 	if err != nil {
-// 		return model.Product{}, fmt.Errorf("stock in: %w", err)
-// 	}
-
-// 	return updatedProduct, nil
-// }
-
-// func (ps *ProductService) StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
-// 	if request.Quantity <= 0 {
-// 		return model.Product{}, fmt.Errorf("stock out: %w", ErrInvalidProductQuantity)
-// 	}
-
-// 	updatedProduct, err := ps.productRepository.StockOut(ctx, productID, request)
-// 	if err != nil {
-// 		return model.Product{}, fmt.Errorf("stock out: %w", err)
-// 	}
-
-// 	return updatedProduct, nil
-// }

@@ -401,94 +401,6 @@ func (pr *ProductRepository) CountProducts(ctx context.Context, filter model.Pro
 	return count, nil
 }
 
-// func (pr *ProductRepository) StockIn(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
-// 	var updatedProduct model.Product
-
-// 	err := pr.db.QueryRow(ctx, `
-//         UPDATE products
-// 		SET quantity = quantity + $1,
-// 			updated_at = NOW()
-// 		WHERE id = $2
-// 		RETURNING
-// 			id,
-// 			name,
-// 			price,
-// 			status,
-// 			quantity,
-// 			minimum_stock,
-// 			created_at,
-// 			updated_at
-// 		`, request.Quantity, productID).Scan(
-// 		&updatedProduct.ID,
-// 		&updatedProduct.Name,
-// 		&updatedProduct.Price,
-// 		&updatedProduct.Status,
-// 		&updatedProduct.Quantity,
-// 		&updatedProduct.MinimumStock,
-// 		&updatedProduct.CreatedAt,
-// 		&updatedProduct.UpdatedAt,
-// 	)
-
-// 	if err != nil {
-// 		if errors.Is(err, pgx.ErrNoRows) {
-// 			return model.Product{}, ErrProductNotFound
-// 		}
-// 		return model.Product{}, fmt.Errorf("stock in: %w", err)
-// 	}
-
-// 	return updatedProduct, nil
-// }
-
-// func (pr *ProductRepository) StockOut(ctx context.Context, productID int, request model.StockRequest) (model.Product, error) {
-// 	var updatedProduct model.Product
-
-// 	err := pr.db.QueryRow(ctx, `
-//         UPDATE products
-// 		SET quantity = quantity - $1,
-// 			updated_at = NOW()
-// 		WHERE id = $2
-// 			AND quantity >= $1
-// 		RETURNING
-// 			id,
-// 			name,
-// 			price,
-// 			status,
-// 			quantity,
-// 			minimum_stock,
-// 			created_at,
-// 			updated_at
-// 		`, request.Quantity, productID).Scan(
-// 		&updatedProduct.ID,
-// 		&updatedProduct.Name,
-// 		&updatedProduct.Price,
-// 		&updatedProduct.Status,
-// 		&updatedProduct.Quantity,
-// 		&updatedProduct.MinimumStock,
-// 		&updatedProduct.CreatedAt,
-// 		&updatedProduct.UpdatedAt,
-// 	)
-
-// 	if err != nil {
-// 		if errors.Is(err, pgx.ErrNoRows) {
-// 			_, err := pr.GetProductByID(ctx, productID)
-
-// 			if err != nil {
-// 				if errors.Is(err, ErrProductNotFound) {
-// 					return model.Product{}, ErrProductNotFound
-// 				}
-
-// 				return model.Product{}, fmt.Errorf("verify product after stock out: %w", err)
-// 			}
-
-// 			return model.Product{}, ErrInsufficientStock
-// 		}
-
-// 		return model.Product{}, fmt.Errorf("stock out: %w", err)
-// 	}
-
-// 	return updatedProduct, nil
-// }
-
 func (pr *ProductRepository) UpdateProductQuantity(ctx context.Context, productID int, newQuantity int) error {
 	cmdTag, err := pr.db.Exec(ctx, `
        UPDATE products
@@ -506,4 +418,74 @@ func (pr *ProductRepository) UpdateProductQuantity(ctx context.Context, productI
 	}
 
 	return nil
+}
+
+func (pr *ProductRepository) GetInventoryDashboard(ctx context.Context) (model.InventoryDashboard, error) {
+	var dashboard model.InventoryDashboard
+
+	row := pr.db.QueryRow(ctx,
+		`
+		SELECT
+			COUNT(*) AS total_products,
+
+			COUNT(
+				CASE 
+					WHEN status = 'ACTIVE' 
+					THEN 1 
+				END
+			) AS active_products,
+
+			COUNT(
+				CASE 
+					WHEN status = 'INACTIVE' 
+					THEN 1 
+				END
+			) AS inactive_products,
+
+			COALESCE(SUM(quantity), 0) AS total_quantity_on_hand,
+
+			COUNT(
+				CASE 
+					WHEN status = 'ACTIVE' 
+					AND quantity <= minimum_stock 
+					AND quantity > 0 
+					THEN 1 
+				END
+			) AS low_stock_products,
+
+			COUNT(
+				CASE 
+					WHEN status = 'ACTIVE' 
+					AND quantity = 0 
+					THEN 1 
+				END
+			) AS out_of_stock_products,
+
+			COALESCE(
+				SUM(
+					CASE
+						WHEN status = 'ACTIVE'
+						THEN quantity * price
+					END
+				),
+				0
+			) AS total_inventory_value
+
+		FROM products`)
+
+	err := row.Scan(
+		&dashboard.TotalProducts,
+		&dashboard.ActiveProducts,
+		&dashboard.InactiveProducts,
+		&dashboard.TotalQuantityOnHand,
+		&dashboard.LowStockProducts,
+		&dashboard.OutOfStockProducts,
+		&dashboard.TotalInventoryValue,
+	)
+
+	if err != nil {
+		return model.InventoryDashboard{}, fmt.Errorf("get inventory dashboard: %w", err)
+	}
+
+	return dashboard, nil
 }

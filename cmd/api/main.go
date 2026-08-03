@@ -64,6 +64,7 @@ func main() {
 
 	// INVENTORY
 	router.GET("/products/:id/stock-movements", inventoryHandler.GetStockMovements)
+	router.GET("/inventory/dashboard", inventoryHandler.GetInventoryDashboard)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

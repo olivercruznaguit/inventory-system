@@ -146,3 +146,15 @@ func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stockResponse)
 }
+
+func (h *InventoryHandler) GetInventoryDashboard(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	inventoryDashboard, err := h.service.GetInventoryDashboard(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.NewInventoryDashboardResponse(inventoryDashboard))
+}
