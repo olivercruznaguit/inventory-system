@@ -2,7 +2,10 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
@@ -41,6 +44,14 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func LoadEnv(path string) error {
+	if err := godotenv.Load(path); err != nil {
+		return fmt.Errorf("load env %s: %w", path, err)
+	}
+
+	return nil
 }
 
 func (c *Config) Validate() error {

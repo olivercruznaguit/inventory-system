@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 
 	"github.com/olivercruznaguit/inventory-system/internal/config"
 	"github.com/olivercruznaguit/inventory-system/internal/database"
@@ -15,8 +14,8 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal(err)
+	if err := config.LoadEnv(".env"); err != nil {
+		log.Fatalf("failed to load env file: %v", err)
 	}
 
 	cfg, err := config.Load()
