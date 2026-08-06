@@ -3,6 +3,7 @@ package inventory_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/olivercruznaguit/inventory-system/internal/integration/testutil"
@@ -280,4 +281,63 @@ func TestInventoryService_StockOut_InsufficientStock(t *testing.T) {
 	testutil.AssertProductQuantity(t, ctx, db, product.ID, 100)
 
 	testutil.AssertStockMovementCount(t, ctx, db, product.ID, 0)
+}
+
+// Verifies that concurrent StockOut operations are serialized
+// using PostgreSQL row-level locking (SELECT ... FOR UPDATE).
+// The final quantity should be 0 with exactly 10 stock movements.
+func TestInventoryService_StockOut_Concurrent(t *testing.T) {
+	// ARRANGE
+	db := testutil.SetupTestDatabase(t)
+
+	ctx := context.Background()
+
+	testutil.CleanupDatabase(t, ctx, db)
+
+	category := testutil.SeedCategory(t, ctx, db,
+		model.Category{
+			Name: "Electronics",
+		},
+	)
+
+	product := testutil.SeedProduct(t, ctx, db, model.Product{
+		Name:     "Laptop",
+		Price:    1000.00,
+		Status:   model.ProductStatusActive,
+		Quantity: 100,
+		Category: &category,
+	})
+
+	inventoryService := service.NewInventoryService(db)
+
+	request := model.StockRequest{
+		ProductID: int(product.ID),
+		Quantity:  10,
+	}
+
+	// ACT
+	requests := 10
+	ch := make(chan error, requests)
+	var wg sync.WaitGroup
+
+	for range requests {
+		wg.Go(func() {
+			_, err := inventoryService.StockOut(ctx, request)
+			ch <- err
+		})
+	}
+
+	wg.Wait()
+	close(ch)
+
+	// ASSERT
+	for err := range ch {
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+	}
+
+	testutil.AssertProductQuantity(t, ctx, db, product.ID, 0)
+
+	testutil.AssertStockMovementCount(t, ctx, db, product.ID, requests)
 }
