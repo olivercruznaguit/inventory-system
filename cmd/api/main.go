@@ -11,8 +11,22 @@ import (
 	"github.com/olivercruznaguit/inventory-system/internal/handler"
 	"github.com/olivercruznaguit/inventory-system/internal/repository"
 	"github.com/olivercruznaguit/inventory-system/internal/service"
+
+	_ "github.com/olivercruznaguit/inventory-system/docs"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title           Inventory System
+// @version         1.0
+// @description     REST API for managing products, categories, and inventory stock.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name    API Support
+// @contact.email   support@example.com
+
+// @host            localhost:8080
+// @BasePath        /
 func main() {
 	if err := config.LoadEnv(".env"); err != nil {
 		log.Fatalf("failed to load env file: %v", err)
@@ -32,6 +46,9 @@ func main() {
 
 	router := gin.Default()
 
+	// SWAGGER UI ROUTE
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	productRepository := repository.NewProductRepository(db.DB())
 	categoryRepository := repository.NewCategoryRepository(db.DB())
 
@@ -48,8 +65,6 @@ func main() {
 	router.GET("/products", productHandler.GetProducts)
 	router.GET("/products/:id", productHandler.GetProductByID)
 	router.POST("/products", productHandler.CreateProduct)
-	router.POST("/products/:id/stock-in", inventoryHandler.StockIn)
-	router.POST("/products/:id/stock-out", inventoryHandler.StockOut)
 	router.PUT("/products/:id", productHandler.UpdateProduct)
 	router.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
 	router.DELETE("/products/:id", productHandler.DeleteProduct)
@@ -64,6 +79,8 @@ func main() {
 	// INVENTORY
 	router.GET("/products/:id/stock-movements", inventoryHandler.GetStockMovements)
 	router.GET("/inventory/dashboard", inventoryHandler.GetInventoryDashboard)
+	router.POST("/products/:id/stock-in", inventoryHandler.StockIn)
+	router.POST("/products/:id/stock-out", inventoryHandler.StockOut)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

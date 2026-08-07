@@ -23,6 +23,23 @@ func NewProductHandler(service *service.ProductService) *ProductHandler {
 	}
 }
 
+// GetProducts godoc
+// @Summary      Get products
+// @Description  Get a list of products with optional filtering and pagination
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        page     query     int    false  "Page number"
+// @Param        pageSize query     int    false  "Number of items per page"
+// @Param        status   query     string false  "Product status (ACTIVE or INACTIVE)"
+// @Param        search   query     string false  "Search term"
+// @Param        categoryId query   int    false  "Category ID"
+// @Param        sortBy   query     string false  "Sort by field"
+// @Param        sortOrder query    string false  "Sort order (DESC or ASC)"
+// @Success      200  {object}  response.ProductListResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products [get]
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -103,6 +120,18 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, productListResponse)
 }
 
+// GetProductByID godoc
+// @Summary      Get product by ID
+// @Description  Get detailed information of a product by its unique ID
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Product ID"
+// @Success      200  {object}  response.ProductResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id} [get]
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	ctx := c.Request.Context()
 	idStr := c.Param("id")
@@ -131,6 +160,17 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewProductResponse(product))
 }
 
+// CreateProduct godoc
+// @Summary      Create a new product
+// @Description  Create a new product with the provided details
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        product body request.CreateProductRequest true "Product details"
+// @Success      201  {object}  response.ProductResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.CreateProductRequest
@@ -167,9 +207,22 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, createdProduct)
+	c.JSON(http.StatusCreated, response.NewProductResponse(createdProduct))
 }
 
+// UpdateProduct godoc
+// @Summary      Update an existing product
+// @Description  Update the details of an existing product by its unique ID
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int  true  "Product ID"
+// @Param        product body request.UpdateProductRequest true "Updated product details"
+// @Success      200  {object}  response.ProductResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -231,9 +284,22 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedProduct)
+	c.JSON(http.StatusOK, response.NewProductResponse(updatedProduct))
 }
 
+// UpdateProductStatus godoc
+// @Summary      Update product status
+// @Description  Update the status of an existing product by its unique ID
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int  true  "Product ID"
+// @Param        status  body      string true  "Updated product status"
+// @Success      200  {object}  response.ProductResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id}/status [patch]
 func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -278,10 +344,19 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, updatedProduct)
+	c.JSON(http.StatusOK, response.NewProductResponse(updatedProduct))
 
 }
 
+// DeleteProduct godoc
+// @Summary      Delete a product
+// @Description  Delete an existing product by its unique ID
+// @Tags         Products
+// @Param        id path int true "Product ID"
+// @Success      204  {object}  nil
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	ctx := c.Request.Context()
 

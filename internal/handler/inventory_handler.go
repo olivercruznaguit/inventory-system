@@ -23,6 +23,19 @@ func NewInventoryHandler(service *service.InventoryService) *InventoryHandler {
 	}
 }
 
+// StockIn godoc
+// @Summary      Stock in a product
+// @Description  Increase the stock of a product by its unique ID
+// @Tags         Inventory
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int  true  "Product ID"
+// @Param        stock   body      request.StockRequest  true  "Stock in details"
+// @Success      200  {object}  response.StockResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id}/stock-in [post]
 func (h *InventoryHandler) StockIn(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -68,6 +81,19 @@ func (h *InventoryHandler) StockIn(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewStockResponse(updatedProduct))
 }
 
+// StockOut godoc
+// @Summary      Stock out a product
+// @Description  Decrease the stock of a product by its unique ID
+// @Tags         Inventory
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int  true  "Product ID"
+// @Param        stock   body      request.StockRequest  true  "Stock out details"
+// @Success      200  {object}  response.StockResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id}/stock-out [post]
 func (h *InventoryHandler) StockOut(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -113,6 +139,18 @@ func (h *InventoryHandler) StockOut(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewStockResponse(updatedProduct))
 }
 
+// GetStockMovements godoc
+// @Summary      Retrieve stock movements for a product
+// @Description  Get a list of stock movements (in and out) for a specific product by its unique ID
+// @Tags         Inventory
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Product ID"
+// @Success      200  {object}  response.StockMovementListResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /products/{id}/stock-movements [get]
 func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -147,6 +185,15 @@ func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
 	c.JSON(http.StatusOK, stockResponse)
 }
 
+// GetInventoryDashboard godoc
+// @Summary      Retrieve inventory dashboard data
+// @Description  Get a summary of the inventory, including total products, total stock, and stock value
+// @Tags         Inventory
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  response.InventoryDashboardResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /inventory/dashboard [get]
 func (h *InventoryHandler) GetInventoryDashboard(c *gin.Context) {
 	ctx := c.Request.Context()
 

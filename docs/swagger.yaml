@@ -1,0 +1,742 @@
+basePath: /
+definitions:
+  request.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  request.CreateProductRequest:
+    properties:
+      categoryId:
+        type: integer
+      minimumStock:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+    required:
+    - name
+    - price
+    type: object
+  request.StockRequest:
+    properties:
+      quantity:
+        type: integer
+      reason:
+        type: string
+    required:
+    - quantity
+    type: object
+  request.UpdateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  request.UpdateProductRequest:
+    properties:
+      categoryId:
+        type: integer
+      minimumStock:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+      status:
+        type: string
+    required:
+    - name
+    - price
+    - status
+    type: object
+  response.CategoryResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  response.InventoryDashboardResponse:
+    properties:
+      activeProducts:
+        type: integer
+      inactiveProducts:
+        type: integer
+      lowStockProducts:
+        type: integer
+      outOfStockProducts:
+        type: integer
+      totalInventoryValue:
+        type: number
+      totalProducts:
+        type: integer
+      totalQuantityOnHand:
+        type: integer
+    type: object
+  response.PaginationResponse:
+    properties:
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalItems:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  response.ProductCategoryResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  response.ProductListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/response.ProductResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/response.PaginationResponse'
+    type: object
+  response.ProductResponse:
+    properties:
+      category:
+        $ref: '#/definitions/response.ProductCategoryResponse'
+      createdAt:
+        type: string
+      id:
+        type: integer
+      minimumStock:
+        type: integer
+      name:
+        type: string
+      price:
+        type: number
+      quantity:
+        type: integer
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  response.StockMovementListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/response.StockMovementResponse'
+        type: array
+    type: object
+  response.StockMovementResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      quantity:
+        type: integer
+      reason:
+        type: string
+      remainingQuantity:
+        type: integer
+      type:
+        type: string
+    type: object
+  response.StockResponse:
+    properties:
+      id:
+        type: integer
+      minimumStock:
+        type: integer
+      name:
+        type: string
+      quantity:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+  description: REST API for managing products, categories, and inventory stock.
+  termsOfService: http://swagger.io/terms/
+  title: Inventory System
+  version: "1.0"
+paths:
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/response.CategoryResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Retrieve all categories
+      tags:
+      - Categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new category with the provided name
+      parameters:
+      - description: Category details
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new category
+      tags:
+      - Categories
+  /categories/{id}:
+    delete:
+      description: Delete an existing category by its unique ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a category
+      tags:
+      - Categories
+    get:
+      consumes:
+      - application/json
+      description: Get a category by its unique ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Retrieve a category by ID
+      tags:
+      - Categories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing category by its unique ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated category details
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.CategoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a category
+      tags:
+      - Categories
+  /inventory/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Get a summary of the inventory, including total products, total
+        stock, and stock value
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.InventoryDashboardResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Retrieve inventory dashboard data
+      tags:
+      - Inventory
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of products with optional filtering and pagination
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: pageSize
+        type: integer
+      - description: Product status (ACTIVE or INACTIVE)
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Category ID
+        in: query
+        name: categoryId
+        type: integer
+      - description: Sort by field
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order (DESC or ASC)
+        in: query
+        name: sortOrder
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ProductListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get products
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: Create a new product with the provided details
+      parameters:
+      - description: Product details
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/request.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new product
+      tags:
+      - Products
+  /products/{id}:
+    delete:
+      description: Delete an existing product by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a product
+      tags:
+      - Products
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information of a product by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get product by ID
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: Update the details of an existing product by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated product details
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update an existing product
+      tags:
+      - Products
+  /products/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update the status of an existing product by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated product status
+        in: body
+        name: status
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update product status
+      tags:
+      - Products
+  /products/{id}/stock-in:
+    post:
+      consumes:
+      - application/json
+      description: Increase the stock of a product by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Stock in details
+        in: body
+        name: stock
+        required: true
+        schema:
+          $ref: '#/definitions/request.StockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.StockResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Stock in a product
+      tags:
+      - Inventory
+  /products/{id}/stock-movements:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of stock movements (in and out) for a specific product
+        by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.StockMovementListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Retrieve stock movements for a product
+      tags:
+      - Inventory
+  /products/{id}/stock-out:
+    post:
+      consumes:
+      - application/json
+      description: Decrease the stock of a product by its unique ID
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Stock out details
+        in: body
+        name: stock
+        required: true
+        schema:
+          $ref: '#/definitions/request.StockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.StockResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Stock out a product
+      tags:
+      - Inventory
+swagger: "2.0"

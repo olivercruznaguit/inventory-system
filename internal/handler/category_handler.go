@@ -23,6 +23,18 @@ func NewCategoryHandler(service *service.CategoryService) *CategoryHandler {
 	}
 }
 
+// CreateCategory godoc
+// @Summary      Create a new category
+// @Description  Create a new category with the provided name
+// @Tags         Categories
+// @Accept       json
+// @Produce      json
+// @Param        category body request.CreateCategoryRequest true "Category details"
+// @Success      201  {object}  response.CategoryResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /categories [post]
 func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -39,7 +51,7 @@ func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 	createdCategory, err := ch.service.CreateCategory(ctx, category)
 	if err != nil {
 		if errors.Is(err, repository.ErrCategoryAlreadyExists) {
-			c.JSON(http.StatusConflict, gin.H{"error": "Category already exist"})
+			c.JSON(http.StatusConflict, gin.H{"error": "Category already exists"})
 			return
 		}
 
@@ -50,6 +62,15 @@ func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 	c.JSON(http.StatusCreated, response.NewCategoryResponse(createdCategory))
 }
 
+// GetCategories godoc
+// @Summary      Retrieve all categories
+// @Description  Get a list of all categories
+// @Tags         Categories
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  []response.CategoryResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /categories [get]
 func (ch *CategoryHandler) GetCategories(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -69,6 +90,18 @@ func (ch *CategoryHandler) GetCategories(c *gin.Context) {
 	c.JSON(http.StatusOK, categoryResponses)
 }
 
+// GetCategoryByID godoc
+// @Summary 	   Retrieve a category by ID
+// @Description    Get a category by its unique ID
+// @Tags 		   Categories
+// @Accept         json
+// @Produce        json
+// @param          id path int true "Category ID"
+// @Success        200 {object} response.CategoryResponse
+// @Failure        400 {object} map[string]string
+// @Failure        404 {object} map[string]string
+// @Failure        500 {object} map[string]string
+// @Router         /categories/{id} [get]
 func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -94,6 +127,19 @@ func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewCategoryResponse(category))
 }
 
+// UpdateCategory godoc
+// @Summary      Update a category
+// @Description  Update an existing category by its unique ID
+// @Tags         Categories
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int  true  "Category ID"
+// @Param        category body      request.UpdateCategoryRequest  true  "Updated category details"
+// @Success      200  {object}  response.CategoryResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /categories/{id} [put]
 func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -141,6 +187,15 @@ func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 	c.JSON(http.StatusOK, response.NewCategoryResponse(updatedCategory))
 }
 
+// DeleteCategory godoc
+// @Summary      Delete a category
+// @Description  Delete an existing category by its unique ID
+// @Tags         Categories
+// @Param        id path int true "Category ID"
+// @Success      204  {object}  nil
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /categories/{id} [delete]
 func (ch *CategoryHandler) DeleteCategory(c *gin.Context) {
 	ctx := c.Request.Context()
 
