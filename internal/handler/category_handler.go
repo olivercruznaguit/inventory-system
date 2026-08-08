@@ -31,16 +31,16 @@ func NewCategoryHandler(service *service.CategoryService) *CategoryHandler {
 // @Produce      json
 // @Param        category body request.CreateCategoryRequest true "Category details"
 // @Success      201  {object}  response.CategoryResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      409  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      409  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /categories [post]
 func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req request.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -51,11 +51,11 @@ func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 	createdCategory, err := ch.service.CreateCategory(ctx, category)
 	if err != nil {
 		if errors.Is(err, repository.ErrCategoryAlreadyExists) {
-			c.JSON(http.StatusConflict, gin.H{"error": "Category already exists"})
+			c.JSON(http.StatusConflict, response.NewErrorResponse("Category already exists"))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -69,7 +69,7 @@ func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  []response.CategoryResponse
-// @Failure      500  {object}  map[string]string
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /categories [get]
 func (ch *CategoryHandler) GetCategories(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -77,7 +77,7 @@ func (ch *CategoryHandler) GetCategories(c *gin.Context) {
 	categories, err := ch.service.GetCategories(ctx)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -98,9 +98,9 @@ func (ch *CategoryHandler) GetCategories(c *gin.Context) {
 // @Produce        json
 // @param          id path int true "Category ID"
 // @Success        200 {object} response.CategoryResponse
-// @Failure        400 {object} map[string]string
-// @Failure        404 {object} map[string]string
-// @Failure        500 {object} map[string]string
+// @Failure        400 {object} response.ErrorResponse
+// @Failure        404 {object} response.ErrorResponse
+// @Failure        500 {object} response.ErrorResponse
 // @Router         /categories/{id} [get]
 func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -108,7 +108,7 @@ func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid category ID"))
 		return
 	}
 
@@ -116,11 +116,11 @@ func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, repository.ErrCategoryNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Category not found"))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -136,9 +136,10 @@ func (ch *CategoryHandler) GetCategoryByID(c *gin.Context) {
 // @Param        id      path      int  true  "Category ID"
 // @Param        category body      request.UpdateCategoryRequest  true  "Updated category details"
 // @Success      200  {object}  response.CategoryResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      409  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /categories/{id} [put]
 func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -148,13 +149,13 @@ func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 	id, err := strconv.Atoi(idStr)
 
 	if err != nil || id < 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid category ID"))
 		return
 	}
 
 	var req request.UpdateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -168,17 +169,13 @@ func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrCategoryAlreadyExists):
-			c.JSON(http.StatusConflict, gin.H{
-				"error": "Category already exists",
-			})
+			c.JSON(http.StatusConflict, response.NewErrorResponse("Category already exists"))
 
 		case errors.Is(err, repository.ErrCategoryNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Category not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Category not found"))
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		}
 
 		return
@@ -193,15 +190,15 @@ func (ch *CategoryHandler) UpdateCategory(c *gin.Context) {
 // @Tags         Categories
 // @Param        id path int true "Category ID"
 // @Success      204  {object}  nil
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /categories/{id} [delete]
 func (ch *CategoryHandler) DeleteCategory(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid category ID"))
 		return
 	}
 
@@ -209,11 +206,11 @@ func (ch *CategoryHandler) DeleteCategory(c *gin.Context) {
 
 	if err != nil {
 		if errors.Is(err, repository.ErrCategoryNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Category not found"))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 

@@ -37,8 +37,8 @@ func NewProductHandler(service *service.ProductService) *ProductHandler {
 // @Param        sortBy   query     string false  "Sort by field"
 // @Param        sortOrder query    string false  "Sort order (DESC or ASC)"
 // @Success      200  {object}  response.ProductListResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products [get]
 func (h *ProductHandler) GetProducts(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -53,13 +53,13 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid page number"))
 		return
 	}
 
 	pageSize, err := strconv.Atoi(pageSizeStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page size"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid page size"))
 		return
 	}
 
@@ -67,7 +67,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 	if categoryIdStr != "" {
 		categoryIdParsed, err := strconv.Atoi(categoryIdStr)
 		if err != nil || categoryIdParsed < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid category ID"))
 			return
 		}
 
@@ -94,11 +94,11 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		if errors.Is(err, service.ErrInvalidProductStatus) ||
 			errors.Is(err, service.ErrInvalidSortBy) ||
 			errors.Is(err, service.ErrInvalidSortOrder) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse(err.Error()))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -128,9 +128,9 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 // @Produce      json
 // @Param        id   path      int  true  "Product ID"
 // @Success      200  {object}  response.ProductResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id} [get]
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -138,22 +138,18 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	product, err := h.service.GetProductByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrProductNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Internal server error",
-		})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -168,14 +164,14 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 // @Produce      json
 // @Param        product body request.CreateProductRequest true "Product details"
 // @Success      201  {object}  response.ProductResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -194,16 +190,16 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	createdProduct, err := h.service.CreateProduct(ctx, product)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidProductMinimumStock) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product minimum stock"})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product minimum stock"))
 			return
 		}
 
 		if errors.Is(err, repository.ErrCategoryNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Category not found"))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -219,9 +215,9 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 // @Param        id      path      int  true  "Product ID"
 // @Param        product body request.UpdateProductRequest true "Updated product details"
 // @Success      200  {object}  response.ProductResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -229,13 +225,13 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	var req request.UpdateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -258,27 +254,19 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		switch {
 
 		case errors.Is(err, service.ErrInvalidProductMinimumStock):
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid product minimum stock",
-			})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product minimum stock"))
 
 		case errors.Is(err, service.ErrInvalidProductStatus):
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid product status",
-			})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product status"))
 
 		case errors.Is(err, repository.ErrProductNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 
 		case errors.Is(err, repository.ErrCategoryNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Category not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Category not found"))
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		}
 
 		return
@@ -296,9 +284,9 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 // @Param        id      path      int  true  "Product ID"
 // @Param        status  body      string true  "Updated product status"
 // @Success      200  {object}  response.ProductResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id}/status [patch]
 func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -306,16 +294,14 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	var req request.UpdateProductStatusRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid request body",
-		})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -326,19 +312,13 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidProductStatus):
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product status"))
 
 		case errors.Is(err, repository.ErrProductNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Internal server error",
-			})
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		}
 
 		return
@@ -354,8 +334,8 @@ func (h *ProductHandler) UpdateProductStatus(c *gin.Context) {
 // @Tags         Products
 // @Param        id path int true "Product ID"
 // @Success      204  {object}  nil
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -363,21 +343,19 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	err = h.service.DeleteProduct(ctx, id)
 
 	if errors.Is(err, repository.ErrProductNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Product not found",
-		})
+		c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 		return
 	}
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 

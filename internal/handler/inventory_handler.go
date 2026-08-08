@@ -32,9 +32,9 @@ func NewInventoryHandler(service *service.InventoryService) *InventoryHandler {
 // @Param        id      path      int  true  "Product ID"
 // @Param        stock   body      request.StockRequest  true  "Stock in details"
 // @Success      200  {object}  response.StockResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id}/stock-in [post]
 func (h *InventoryHandler) StockIn(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -42,13 +42,13 @@ func (h *InventoryHandler) StockIn(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	var req request.StockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -62,17 +62,13 @@ func (h *InventoryHandler) StockIn(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidProductQuantity):
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid product quantity",
-			})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product quantity"))
 
 		case errors.Is(err, repository.ErrProductNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		}
 
 		return
@@ -90,9 +86,9 @@ func (h *InventoryHandler) StockIn(c *gin.Context) {
 // @Param        id      path      int  true  "Product ID"
 // @Param        stock   body      request.StockRequest  true  "Stock out details"
 // @Success      200  {object}  response.StockResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id}/stock-out [post]
 func (h *InventoryHandler) StockOut(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -147,9 +143,9 @@ func (h *InventoryHandler) StockOut(c *gin.Context) {
 // @Produce      json
 // @Param        id path int true "Product ID"
 // @Success      200  {object}  response.StockMovementListResponse
-// @Failure      400  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
+// @Failure      400  {object}  response.ErrorResponse
+// @Failure      404  {object}  response.ErrorResponse
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /products/{id}/stock-movements [get]
 func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -158,18 +154,18 @@ func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	stockMovements, err := h.service.GetStockMovements(ctx, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrProductNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 			return
 		}
 
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
@@ -192,14 +188,14 @@ func (h *InventoryHandler) GetStockMovements(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {object}  response.InventoryDashboardResponse
-// @Failure      500  {object}  map[string]string
+// @Failure      500  {object}  response.ErrorResponse
 // @Router       /inventory/dashboard [get]
 func (h *InventoryHandler) GetInventoryDashboard(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	inventoryDashboard, err := h.service.GetInventoryDashboard(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
