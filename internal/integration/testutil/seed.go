@@ -74,3 +74,31 @@ func SeedProduct(t *testing.T, ctx context.Context, db *database.Database, produ
 
 	return insertedProduct
 }
+
+func SeedUser(t *testing.T, ctx context.Context, db *database.Database, user model.User) model.User {
+	t.Helper()
+	var insertedUser model.User
+
+	err := db.DB().QueryRow(ctx, `
+        INSERT INTO users (email, password_hash)
+        VALUES ($1, $2)
+        RETURNING 
+			id, 
+			email, 
+			password_hash,
+			created_at, 
+			updated_at
+    `, user.Email, user.PasswordHash).Scan(
+		&insertedUser.ID,
+		&insertedUser.Email,
+		&insertedUser.PasswordHash,
+		&insertedUser.CreatedAt,
+		&insertedUser.UpdatedAt,
+	)
+
+	if err != nil {
+		t.Fatalf("failed to seed user: %v", err)
+	}
+
+	return insertedUser
+}

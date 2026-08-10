@@ -9,4 +9,6 @@ var (
 	ErrInvalidProductQuantity     = errors.New("invalid product quantity")
 	ErrInvalidProductMinimumStock = errors.New("invalid product minimum stock")
 	ErrInsufficientStock          = errors.New("insufficient stock")
+	ErrInvalidEmailAddress        = errors.New("invalid email address")
+	ErrIncorrectPassword          = errors.New("incorrect password")
 )

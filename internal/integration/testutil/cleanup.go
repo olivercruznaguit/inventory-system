@@ -14,7 +14,8 @@ func CleanupDatabase(t *testing.T, ctx context.Context, db *database.Database) {
 		TRUNCATE TABLE
 			stock_movements,
 			products,
-			categories
+			categories,
+			users
 		RESTART IDENTITY CASCADE;`)
 	if err != nil {
 		t.Fatalf("failed to cleanup database: %v", err)
