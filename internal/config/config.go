@@ -20,9 +20,14 @@ type DatabaseConfig struct {
 	Password string
 }
 
+type AuthConfig struct {
+	JWTSecret string
+}
+
 type Config struct {
-	App AppConfig
-	DB  DatabaseConfig
+	App  AppConfig
+	DB   DatabaseConfig
+	Auth AuthConfig
 }
 
 func Load() (*Config, error) {
@@ -36,6 +41,10 @@ func Load() (*Config, error) {
 			Name:     os.Getenv("DB_NAME"),
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),
+		},
+
+		Auth: AuthConfig{
+			JWTSecret: os.Getenv("JWT_SECRET"),
 		},
 	}
 
@@ -77,6 +86,10 @@ func (c *Config) Validate() error {
 
 	if c.DB.Password == "" {
 		return errors.New("DB_PASSWORD is required")
+	}
+
+	if c.Auth.JWTSecret == "" {
+		return errors.New("JWT_SECRET is required")
 	}
 
 	return nil

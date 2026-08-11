@@ -1,5 +1,15 @@
 basePath: /
 definitions:
+  request.AuthRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
   request.CreateCategoryRequest:
     properties:
       name:
@@ -53,6 +63,11 @@ definitions:
     - name
     - price
     - status
+    type: object
+  response.AuthResponse:
+    properties:
+      token:
+        type: string
     type: object
   response.CategoryResponse:
     properties:
@@ -168,6 +183,13 @@ definitions:
       quantity:
         type: integer
     type: object
+  response.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -178,6 +200,74 @@ info:
   title: Inventory System
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: create a jwt token for session
+      parameters:
+      - description: Login Request
+        in: body
+        name: auth
+        required: true
+        schema:
+          $ref: '#/definitions/request.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: authentication for inventory system
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: Register Request
+        in: body
+        name: auth
+        required: true
+        schema:
+          $ref: '#/definitions/request.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create user for inventory system
+      tags:
+      - auth
   /categories:
     get:
       consumes:

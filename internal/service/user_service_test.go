@@ -11,6 +11,7 @@ import (
 
 type fakeUserRepository struct {
 	getUserByEmailCalls int
+	createUserCalls     int
 	err                 error
 	user                model.User
 }
@@ -25,7 +26,17 @@ func (f *fakeUserRepository) GetUserByEmail(ctx context.Context, email string) (
 	return f.user, nil
 }
 
-func TestUserService_VerifyUser_Success(t *testing.T) {
+func (f *fakeUserRepository) CreateUser(ctx context.Context, user model.User) (model.User, error) {
+	f.getUserByEmailCalls++
+
+	if f.err != nil {
+		return model.User{}, f.err
+	}
+
+	return f.user, nil
+}
+
+func TestUserService_Authenticate_Success(t *testing.T) {
 	// ARRANGE
 	password := "testpassword"
 	passwordHash, err := HashPassword(password)
@@ -35,6 +46,7 @@ func TestUserService_VerifyUser_Success(t *testing.T) {
 
 	repository := &fakeUserRepository{
 		user: model.User{
+			ID:           1,
 			Email:        "test@gmail.com",
 			PasswordHash: passwordHash,
 		},
@@ -43,15 +55,19 @@ func TestUserService_VerifyUser_Success(t *testing.T) {
 	service := NewUserService(repository)
 
 	// ACT
-	result, err := service.VerifyUser(context.Background(), "test@gmail.com", password)
+	user, err := service.Authenticate(context.Background(), "test@gmail.com", password)
 
 	// ASSERT
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !result {
-		t.Errorf("expected result %t, got %v", true, result)
+	if user.ID != repository.user.ID {
+		t.Errorf("expected user ID %d, got %d", repository.user.ID, user.ID)
+	}
+
+	if user.Email != repository.user.Email {
+		t.Errorf("expected email %s, got %s", repository.user.Email, user.Email)
 	}
 
 	if repository.getUserByEmailCalls != 1 {
@@ -62,14 +78,14 @@ func TestUserService_VerifyUser_Success(t *testing.T) {
 	}
 }
 
-func TestUserService_VerifyUser_InvalidEmail(t *testing.T) {
+func TestUserService_Authenticate_InvalidEmail(t *testing.T) {
 	// ARRANGE
 	repository := &fakeUserRepository{}
 
 	service := NewUserService(repository)
 
 	// ACT
-	result, err := service.VerifyUser(context.Background(), "test@gmail.", "testpassword")
+	_, err := service.Authenticate(context.Background(), "test@gmail.", "testpassword")
 
 	// ASSERT
 	if err == nil {
@@ -80,10 +96,6 @@ func TestUserService_VerifyUser_InvalidEmail(t *testing.T) {
 		t.Errorf("expected error %s, got %s", ErrInvalidEmailAddress, err.Error())
 	}
 
-	if result {
-		t.Errorf("expected result %t, got %v", false, result)
-	}
-
 	if repository.getUserByEmailCalls != 0 {
 		t.Errorf(
 			"expected repository not to be called, got %d calls",
@@ -92,7 +104,7 @@ func TestUserService_VerifyUser_InvalidEmail(t *testing.T) {
 	}
 }
 
-func TestUserService_VerifyUser_IncorrectPassword(t *testing.T) {
+func TestUserService_Authenticate_IncorrectPassword(t *testing.T) {
 	// ARRANGE
 	password := "testpassword"
 	email := "test@gmail.com"
@@ -111,7 +123,7 @@ func TestUserService_VerifyUser_IncorrectPassword(t *testing.T) {
 	service := NewUserService(repository)
 
 	// ACT
-	result, err := service.VerifyUser(context.Background(), email, "passwordtest")
+	_, err = service.Authenticate(context.Background(), email, "passwordtest")
 
 	// ASSERT
 	if err == nil {
@@ -122,10 +134,6 @@ func TestUserService_VerifyUser_IncorrectPassword(t *testing.T) {
 		t.Errorf("expected error %s, got %s", ErrIncorrectPassword, err.Error())
 	}
 
-	if result {
-		t.Errorf("expected result %t, got %v", false, result)
-	}
-
 	if repository.getUserByEmailCalls != 1 {
 		t.Errorf(
 			"expected repository to be called once, got %d calls",
@@ -134,7 +142,7 @@ func TestUserService_VerifyUser_IncorrectPassword(t *testing.T) {
 	}
 }
 
-func TestUserService_VerifyUser_UserNotFound(t *testing.T) {
+func TestUserService_Authenticate_UserNotFound(t *testing.T) {
 	// ARRANGE
 	userRepository := &fakeUserRepository{
 		err: repository.ErrUserNotFound,
@@ -143,7 +151,7 @@ func TestUserService_VerifyUser_UserNotFound(t *testing.T) {
 	service := NewUserService(userRepository)
 
 	// ACT
-	result, err := service.VerifyUser(context.Background(), "test@gmail.com", "passwordtest")
+	_, err := service.Authenticate(context.Background(), "test@gmail.com", "passwordtest")
 
 	// ASSERT
 	if err == nil {
@@ -152,10 +160,6 @@ func TestUserService_VerifyUser_UserNotFound(t *testing.T) {
 
 	if !errors.Is(err, repository.ErrUserNotFound) {
 		t.Errorf("expected error %s, got %s", repository.ErrUserNotFound, err.Error())
-	}
-
-	if result {
-		t.Errorf("expected result %t, got %v", false, result)
 	}
 
 	if userRepository.getUserByEmailCalls != 1 {

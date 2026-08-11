@@ -2,13 +2,26 @@ package service
 
 import (
 	"net/mail"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 func isValidEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
+	address, err := mail.ParseAddress(email)
+	if err != nil {
+		return false
+	}
+
+	parts := strings.Split(address.Address, "@")
+	if len(parts) != 2 {
+		return false
+	}
+
+	domain := parts[1]
+
+	return strings.Contains(domain, ".") &&
+		!strings.HasSuffix(domain, ".")
 }
 
 func CheckPasswordHash(password, hash string) bool {

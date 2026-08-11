@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/olivercruznaguit/inventory-system/internal/auth"
 	"github.com/olivercruznaguit/inventory-system/internal/config"
 	"github.com/olivercruznaguit/inventory-system/internal/database"
 	"github.com/olivercruznaguit/inventory-system/internal/handler"
@@ -51,6 +52,7 @@ func main() {
 
 	productRepository := repository.NewProductRepository(db.DB())
 	categoryRepository := repository.NewCategoryRepository(db.DB())
+	userRepository := repository.NewUserRepository(db.DB())
 
 	productService := service.NewProductService(productRepository, categoryRepository)
 	productHandler := handler.NewProductHandler(productService)
@@ -60,6 +62,13 @@ func main() {
 
 	inventoryService := service.NewInventoryService(db)
 	inventoryHandler := handler.NewInventoryHandler(inventoryService)
+
+	userService := service.NewUserService(userRepository)
+	userHandler := handler.NewUserHandler(userService)
+
+	tokenService := auth.NewTokenService(cfg.Auth.JWTSecret)
+	authService := service.NewAuthService(userService, tokenService)
+	authHandler := handler.NewAuthHandler(authService)
 
 	// PRODUCTS
 	router.GET("/products", productHandler.GetProducts)
@@ -81,6 +90,10 @@ func main() {
 	router.GET("/inventory/dashboard", inventoryHandler.GetInventoryDashboard)
 	router.POST("/products/:id/stock-in", inventoryHandler.StockIn)
 	router.POST("/products/:id/stock-out", inventoryHandler.StockOut)
+
+	// AUTH
+	router.POST("/auth/login", authHandler.Login)
+	router.POST("/auth/register", userHandler.Register)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

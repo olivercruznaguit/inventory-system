@@ -9,6 +9,7 @@ import (
 
 type UserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (model.User, error)
+	CreateUser(ctx context.Context, user model.User) (model.User, error)
 }
 
 type UserService struct {
@@ -21,19 +22,45 @@ func NewUserService(repository UserRepository) *UserService {
 	}
 }
 
-func (us *UserService) VerifyUser(ctx context.Context, email string, password string) (bool, error) {
+func (us *UserService) Authenticate(ctx context.Context, email string, password string) (model.User, error) {
 	if !isValidEmail(email) {
-		return false, fmt.Errorf("verify user: %w", ErrInvalidEmailAddress)
+		return model.User{}, fmt.Errorf("authenticate user: %w", ErrInvalidEmailAddress)
 	}
 
 	user, err := us.repository.GetUserByEmail(ctx, email)
 	if err != nil {
-		return false, err
+		return model.User{}, err
 	}
 
 	if !CheckPasswordHash(password, user.PasswordHash) {
-		return false, fmt.Errorf("verify user: %w", ErrIncorrectPassword)
+		return model.User{}, fmt.Errorf("authenticate user: %w", ErrIncorrectPassword)
 	}
 
-	return true, nil
+	return user, nil
+}
+
+func (us *UserService) Register(ctx context.Context, email string, password string) (model.User, error) {
+	if !isValidEmail(email) {
+		return model.User{}, fmt.Errorf("register user: %w", ErrInvalidEmailAddress)
+	}
+
+	// hash pass
+	passwordHash, err := HashPassword(password)
+	if err != nil {
+		return model.User{}, fmt.Errorf("register user: %w", err)
+	}
+
+	user, err := us.repository.CreateUser(
+		ctx,
+		model.User{
+			Email:        email,
+			PasswordHash: passwordHash,
+		},
+	)
+
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
 }
