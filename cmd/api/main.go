@@ -10,6 +10,7 @@ import (
 	"github.com/olivercruznaguit/inventory-system/internal/config"
 	"github.com/olivercruznaguit/inventory-system/internal/database"
 	"github.com/olivercruznaguit/inventory-system/internal/handler"
+	"github.com/olivercruznaguit/inventory-system/internal/middleware"
 	"github.com/olivercruznaguit/inventory-system/internal/repository"
 	"github.com/olivercruznaguit/inventory-system/internal/service"
 
@@ -70,8 +71,10 @@ func main() {
 	authService := service.NewAuthService(userService, tokenService)
 	authHandler := handler.NewAuthHandler(authService)
 
+	authMiddleware := middleware.NewAuthMiddleware(tokenService)
+
 	// PRODUCTS
-	router.GET("/products", productHandler.GetProducts)
+	router.GET("/products", authMiddleware.Authenticate, productHandler.GetProducts)
 	router.GET("/products/:id", productHandler.GetProductByID)
 	router.POST("/products", productHandler.CreateProduct)
 	router.PUT("/products/:id", productHandler.UpdateProduct)

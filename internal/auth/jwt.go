@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -36,4 +37,33 @@ func (ts *TokenService) GenerateToken(user model.User) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func (ts *TokenService) ParseToken(tokenString string) (CustomClaims, error) {
+	var claims CustomClaims
+
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&claims,
+		func(token *jwt.Token) (any, error) {
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, fmt.Errorf(
+					"unexpected signing method: %v",
+					token.Header["alg"],
+				)
+			}
+
+			return ts.secret, nil
+		},
+	)
+
+	if err != nil {
+		return CustomClaims{}, fmt.Errorf("parse token: %w", err)
+	}
+
+	if !token.Valid {
+		return CustomClaims{}, errors.New("invalid token")
+	}
+
+	return claims, nil
 }
