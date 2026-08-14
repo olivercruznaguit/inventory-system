@@ -23,6 +23,7 @@ func (ts *TokenService) GenerateToken(user model.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, CustomClaims{
 		UserID: user.ID,
 		Email:  user.Email,
+		Role:   user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -63,6 +64,11 @@ func (ts *TokenService) ParseToken(tokenString string) (CustomClaims, error) {
 
 	if !token.Valid {
 		return CustomClaims{}, errors.New("invalid token")
+	}
+
+	issuer, err := claims.GetIssuer()
+	if err != nil || issuer != "inventory-system" {
+		return CustomClaims{}, errors.New("invalid token issuer")
 	}
 
 	return claims, nil

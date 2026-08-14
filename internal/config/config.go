@@ -24,10 +24,16 @@ type AuthConfig struct {
 	JWTSecret string
 }
 
+type BootstrapConfig struct {
+	AdminEmail    string
+	AdminPassword string
+}
+
 type Config struct {
-	App  AppConfig
-	DB   DatabaseConfig
-	Auth AuthConfig
+	App       AppConfig
+	DB        DatabaseConfig
+	Auth      AuthConfig
+	Bootstrap BootstrapConfig
 }
 
 func Load() (*Config, error) {
@@ -45,6 +51,11 @@ func Load() (*Config, error) {
 
 		Auth: AuthConfig{
 			JWTSecret: os.Getenv("JWT_SECRET"),
+		},
+
+		Bootstrap: BootstrapConfig{
+			AdminEmail:    os.Getenv("ADMIN_EMAIL"),
+			AdminPassword: os.Getenv("ADMIN_PASSWORD"),
 		},
 	}
 

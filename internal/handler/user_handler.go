@@ -32,8 +32,8 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 // @Failure      400  	{object}  response.ErrorResponse
 // @Failure      409  	{object}  response.ErrorResponse
 // @Failure      500  	{object}  response.ErrorResponse
-// @Router       /auth/register [post]
-func (uh *UserHandler) Register(c *gin.Context) {
+// @Router       /users [post]
+func (uh *UserHandler) CreateUser(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req request.AuthRequest
@@ -43,7 +43,7 @@ func (uh *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := uh.service.Register(ctx, req.Email, req.Password)
+	user, err := uh.service.CreateUser(ctx, req.Email, req.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidEmailAddress):

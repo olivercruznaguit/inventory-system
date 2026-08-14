@@ -43,7 +43,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	log.Println("Connected to PostgreSQL")
+
 	defer db.Close()
 
 	router := gin.Default()
@@ -74,29 +76,69 @@ func main() {
 	authMiddleware := middleware.NewAuthMiddleware(tokenService)
 
 	// PRODUCTS
-	router.GET("/products", authMiddleware.Authenticate, productHandler.GetProducts)
-	router.GET("/products/:id", productHandler.GetProductByID)
-	router.POST("/products", productHandler.CreateProduct)
-	router.PUT("/products/:id", productHandler.UpdateProduct)
-	router.PATCH("/products/:id/status", productHandler.UpdateProductStatus)
-	router.DELETE("/products/:id", productHandler.DeleteProduct)
+	products := router.Group("/products")
+	products.Use(authMiddleware.Authenticate)
+	{
+		// list of products
+		products.GET("", productHandler.GetProducts)
+
+		// get specific product
+		products.GET("/:id", productHandler.GetProductByID)
+
+		// list of stock movements
+		products.GET("/:id/stock-movements", inventoryHandler.GetStockMovements)
+
+		// create a new product
+		products.POST("", productHandler.CreateProduct)
+
+		// stock-in a specific product
+		products.POST("/:id/stock-in", inventoryHandler.StockIn)
+
+		// stock-out a specific product
+		products.POST("/:id/stock-out", inventoryHandler.StockOut)
+
+		// update a single product
+		products.PUT("/:id", productHandler.UpdateProduct)
+
+		// update the status of a product
+		products.PATCH("/:id/status", productHandler.UpdateProductStatus)
+
+		// delete specific product
+		products.DELETE("/:id", authMiddleware.RequireAdmin, productHandler.DeleteProduct)
+	}
 
 	// CATEGORY
-	router.POST("/categories", categoryHandler.CreateCategory)
-	router.GET("/categories", categoryHandler.GetCategories)
-	router.GET("/categories/:id", categoryHandler.GetCategoryByID)
-	router.PUT("/categories/:id", categoryHandler.UpdateCategory)
-	router.DELETE("/categories/:id", categoryHandler.DeleteCategory)
+	categories := router.Group("/categories")
+	categories.Use(authMiddleware.Authenticate)
+	{
+		// list of categories
+		categories.GET("", categoryHandler.GetCategories)
+
+		// create a category
+		categories.POST("", categoryHandler.CreateCategory)
+
+		// get specific category
+		categories.GET("/:id", categoryHandler.GetCategoryByID)
+
+		// update a single category
+		categories.PUT("/:id", categoryHandler.UpdateCategory)
+
+		// delete a specific category
+		categories.DELETE("/:id", authMiddleware.RequireAdmin, categoryHandler.DeleteCategory)
+	}
 
 	// INVENTORY
-	router.GET("/products/:id/stock-movements", inventoryHandler.GetStockMovements)
-	router.GET("/inventory/dashboard", inventoryHandler.GetInventoryDashboard)
-	router.POST("/products/:id/stock-in", inventoryHandler.StockIn)
-	router.POST("/products/:id/stock-out", inventoryHandler.StockOut)
+	inventory := router.Group("/inventory")
+	inventory.Use(authMiddleware.Authenticate)
+	inventory.GET("/dashboard", inventoryHandler.GetInventoryDashboard)
+
+	// USERS
+	users := router.Group("/users")
+	users.Use(authMiddleware.Authenticate, authMiddleware.RequireAdmin)
+	users.POST("", userHandler.CreateUser)
 
 	// AUTH
 	router.POST("/auth/login", authHandler.Login)
-	router.POST("/auth/register", userHandler.Register)
 
 	fmt.Printf("Server listening on :%s\n", cfg.App.Port)
 

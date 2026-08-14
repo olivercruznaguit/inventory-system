@@ -29,6 +29,7 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (mod
 		id,
 		email,
 		password_hash,
+		role,
 		created_at,
 		updated_at
 	FROM users
@@ -40,6 +41,7 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (mod
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -61,21 +63,23 @@ func (ur *UserRepository) CreateUser(ctx context.Context, request model.User) (m
 
 	row := ur.db.QueryRow(ctx, `
 	INSERT INTO users 
-		(email, password_hash)
+		(email, password_hash, role)
 	VALUES
-		($1, $2) 
+		($1, $2, $3) 
 	RETURNING
 		id,
 		email,
 		password_hash,
+		role,
 		created_at,
 		updated_at
-	`, request.Email, request.PasswordHash)
+	`, request.Email, request.PasswordHash, request.Role)
 
 	err := row.Scan(
 		&user.ID,
 		&user.Email,
 		&user.PasswordHash,
+		&user.Role,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)

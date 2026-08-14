@@ -39,15 +39,15 @@ func (us *UserService) Authenticate(ctx context.Context, email string, password 
 	return user, nil
 }
 
-func (us *UserService) Register(ctx context.Context, email string, password string) (model.User, error) {
+func (us *UserService) CreateUser(ctx context.Context, email string, password string) (model.User, error) {
 	if !isValidEmail(email) {
-		return model.User{}, fmt.Errorf("register user: %w", ErrInvalidEmailAddress)
+		return model.User{}, fmt.Errorf("create user: %w", ErrInvalidEmailAddress)
 	}
 
 	// hash pass
 	passwordHash, err := HashPassword(password)
 	if err != nil {
-		return model.User{}, fmt.Errorf("register user: %w", err)
+		return model.User{}, fmt.Errorf("create user: %w", err)
 	}
 
 	user, err := us.repository.CreateUser(
@@ -55,11 +55,39 @@ func (us *UserService) Register(ctx context.Context, email string, password stri
 		model.User{
 			Email:        email,
 			PasswordHash: passwordHash,
+			Role:         model.RoleUser,
 		},
 	)
 
 	if err != nil {
-		return model.User{}, err
+		return model.User{}, fmt.Errorf("create user: %w", err)
+	}
+
+	return user, nil
+}
+
+func (us *UserService) CreateAdmin(ctx context.Context, email string, password string) (model.User, error) {
+	if !isValidEmail(email) {
+		return model.User{}, fmt.Errorf("create admin: %w", ErrInvalidEmailAddress)
+	}
+
+	// hash pass
+	passwordHash, err := HashPassword(password)
+	if err != nil {
+		return model.User{}, fmt.Errorf("create admin: %w", err)
+	}
+
+	user, err := us.repository.CreateUser(
+		ctx,
+		model.User{
+			Email:        email,
+			PasswordHash: passwordHash,
+			Role:         model.RoleAdmin,
+		},
+	)
+
+	if err != nil {
+		return model.User{}, fmt.Errorf("create admin: %w", err)
 	}
 
 	return user, nil

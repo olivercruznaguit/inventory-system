@@ -234,40 +234,6 @@ paths:
       summary: authentication for inventory system
       tags:
       - auth
-  /auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user
-      parameters:
-      - description: Register Request
-        in: body
-        name: auth
-        required: true
-        schema:
-          $ref: '#/definitions/request.AuthRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/response.UserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Create user for inventory system
-      tags:
-      - auth
   /categories:
     get:
       consumes:
@@ -764,4 +730,38 @@ paths:
       summary: Stock out a product
       tags:
       - Inventory
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email and password
+      parameters:
+      - description: Register Request
+        in: body
+        name: auth
+        required: true
+        schema:
+          $ref: '#/definitions/request.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create user for inventory system
+      tags:
+      - auth
 swagger: "2.0"
