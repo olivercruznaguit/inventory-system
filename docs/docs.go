@@ -84,6 +84,38 @@ const docTemplate = `{
                     "Categories"
                 ],
                 "summary": "Retrieve all categories",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort by field",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort order (DESC or ASC)",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -988,6 +1020,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "productCount": {
+                    "type": "integer"
                 },
                 "updatedAt": {
                     "type": "string"

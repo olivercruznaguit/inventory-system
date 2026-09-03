@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/olivercruznaguit/inventory-system/internal/auth"
@@ -49,6 +50,13 @@ func main() {
 	defer db.Close()
 
 	router := gin.Default()
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
 
 	// SWAGGER UI ROUTE
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

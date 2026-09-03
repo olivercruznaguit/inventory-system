@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -49,15 +50,52 @@ func (cr *CategoryRepository) CreateCategory(ctx context.Context, category model
 	return createdCategory, nil
 }
 
-func (cr *CategoryRepository) GetCategories(ctx context.Context) ([]model.Category, error) {
-	rows, err := cr.db.Query(ctx,
+func (cr *CategoryRepository) GetCategories(ctx context.Context, filter model.CategoryFilter) ([]model.Category, error) {
+	pagination := filter.Pagination
+	offset := (pagination.Page - 1) * pagination.PageSize
+	limit := pagination.PageSize
+
+	var queryParts []string
+	var conditions []string
+	var args []any
+
+	queryParts = append(queryParts,
 		`SELECT 
-		id, 
-		name, 
-		created_at, 
-		updated_at
-		FROM categories
-		ORDER BY name`)
+		c.id, 
+		c.name, 
+		c.created_at, 
+		c.updated_at,
+		COUNT(p.id) AS product_count 
+		FROM categories c LEFT JOIN products p ON c.id = p.category_id`)
+
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
+
+		conditions = append(
+			conditions,
+			fmt.Sprintf("c.name ILIKE $%d", len(args)),
+		)
+	}
+
+	if len(conditions) > 0 {
+		queryParts = append(
+			queryParts,
+			"WHERE "+strings.Join(conditions, " AND "),
+		)
+	}
+
+	queryParts = append(queryParts, "GROUP BY c.id, c.name, c.created_at, c.updated_at")
+	queryParts = append(queryParts, fmt.Sprintf("ORDER BY %s %s", filter.SortBy, filter.SortOrder))
+
+	args = append(args, limit)
+	queryParts = append(queryParts, fmt.Sprintf("LIMIT $%d", len(args)))
+
+	args = append(args, offset)
+	queryParts = append(queryParts, fmt.Sprintf("OFFSET $%d", len(args)))
+
+	queryString := strings.Join(queryParts, " ")
+
+	rows, err := cr.db.Query(ctx, queryString, args...)
 
 	if err != nil {
 		return nil, fmt.Errorf("get categories: %w", err)
@@ -75,6 +113,7 @@ func (cr *CategoryRepository) GetCategories(ctx context.Context) ([]model.Catego
 			&category.Name,
 			&category.CreatedAt,
 			&category.UpdatedAt,
+			&category.ProductCount,
 		)
 
 		if err != nil {
@@ -167,4 +206,35 @@ func (cr *CategoryRepository) DeleteCategory(ctx context.Context, id int) error 
 	}
 
 	return nil
+}
+
+func (cr *CategoryRepository) CountCategories(ctx context.Context, filter model.CategoryFilter) (int, error) {
+	var count int
+	var queryParts []string
+	var conditions []string
+	var args []any
+
+	queryParts = append(queryParts, "SELECT COUNT(*) FROM categories")
+
+	if filter.Search != "" {
+		args = append(args, "%"+filter.Search+"%")
+		conditions = append(conditions, fmt.Sprintf("name ILIKE $%d", len(args)))
+	}
+
+	if len(conditions) > 0 {
+		queryParts = append(
+			queryParts,
+			"WHERE "+strings.Join(conditions, " AND "),
+		)
+	}
+
+	queryString := strings.Join(queryParts, " ")
+
+	err := cr.db.QueryRow(ctx, queryString, args...).Scan(&count)
+
+	if err != nil {
+		return 0, fmt.Errorf("count categories: %w", err)
+	}
+
+	return count, nil
 }

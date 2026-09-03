@@ -68,26 +68,70 @@ func (ch *CategoryHandler) CreateCategory(c *gin.Context) {
 // @Tags         Categories
 // @Accept       json
 // @Produce      json
+// @Param        page     	query     	int    	false  "Page number"
+// @Param        pageSize 	query     	int    	false  "Number of items per page"
+// @Param        search   	query     	string 	false  "Search term"
+// @Param        sortBy   	query     	string 	false  "Sort by field"
+// @Param        sortOrder 	query    	string	false  "Sort order (DESC or ASC)"
 // @Success      200  {object}  []response.CategoryResponse
 // @Failure      500  {object}  response.ErrorResponse
 // @Router       /categories [get]
 func (ch *CategoryHandler) GetCategories(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	categories, err := ch.service.GetCategories(ctx)
+	search := c.Query("search")
+	pageSizeStr := c.DefaultQuery("pageSize", "20")
+	pageStr := c.DefaultQuery("page", "1")
+	sortBy := c.Query("sortBy")
+	sortOrder := c.Query("sortOrder")
 
+	page, err := strconv.Atoi(pageStr)
 	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid page number"))
+		return
+	}
+
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid page size"))
+		return
+	}
+
+	filter := model.CategoryFilter{
+		Pagination: model.Pagination{
+			Page:     page,
+			PageSize: pageSize,
+		},
+		Search:    search,
+		SortBy:    sortBy,
+		SortOrder: sortOrder,
+	}
+
+	categories, err := ch.service.GetCategories(ctx, filter)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidSortBy) || errors.Is(err, service.ErrInvalidSortOrder) {
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse(err.Error()))
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		return
 	}
 
-	categoryResponses := make([]response.CategoryResponse, 0, len(categories))
-
-	for _, category := range categories {
+	categoryResponses := make([]response.CategoryResponse, 0, len(categories.Categories))
+	for _, category := range categories.Categories {
 		categoryResponses = append(categoryResponses, response.NewCategoryResponse(category))
 	}
 
-	c.JSON(http.StatusOK, categoryResponses)
+	c.JSON(http.StatusOK, response.CategoryListResponse{
+		Data: categoryResponses,
+		Pagination: response.PaginationResponse{
+			Page:       categories.Pagination.Page,
+			PageSize:   categories.Pagination.PageSize,
+			TotalItems: categories.Pagination.TotalItems,
+			TotalPages: categories.Pagination.TotalPages,
+		},
+	})
 }
 
 // GetCategoryByID godoc

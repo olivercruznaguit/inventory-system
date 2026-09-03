@@ -102,7 +102,7 @@ func (h *ProductHandler) GetProducts(c *gin.Context) {
 		return
 	}
 
-	var productResponses []response.ProductResponse
+	productResponses := make([]response.ProductResponse, 0, len(products.Products))
 	for _, product := range products.Products {
 		productResponses = append(productResponses, response.NewProductResponse(product))
 	}
