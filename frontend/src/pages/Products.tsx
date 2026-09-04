@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth"
 import { getCategories, getProducts } from "../services/api"
 import type { Product, ProductPagination, ProductQueryParams, ProductSort, ProductStatus } from "../types/products"
 import { Alert, Box, Button, CircularProgress, Typography } from "@mui/material"
-import type { Category } from "../types/categories"
+import type { Category, CategoryQueryParams } from "../types/categories"
 import CreateProductDialog from "../components/CreateProductDialog"
 import UpdateProductDialog from "../components/UpdateProductDialog"
 import DeleteProductDialog from "../components/DeleteProductDialog"
@@ -175,8 +175,16 @@ export default function Products() {
 
         async function fetchCategories() {
             try {
-                const data = await getCategories(authToken)
-                setCategories(data)
+                const params: CategoryQueryParams = {
+                    page: 1,
+                    pageSize: 100, // Adjust as needed
+                    search: "",
+                    sortBy: "",
+                    sortOrder: "" 
+                }
+
+                const response = await getCategories(authToken, params)
+                setCategories(response.data)
             } catch (error) {
                 console.error(error)
             }

@@ -1,5 +1,5 @@
 import type { AuthResponse } from "../types/auth"
-import type { Category } from "../types/categories"
+import type { CategoryListResponse, CategoryQueryParams } from "../types/categories"
 import type { InventoryDashboard } from "../types/dashboard"
 import type { CreateProductRequest, ProductListResponse, ProductQueryParams, UpdateProductRequest } from "../types/products"
 
@@ -126,8 +126,25 @@ export async function deleteProduct(token: string, productID: string | number):P
     }
 }
 
-export async function getCategories(token: string, signal?: AbortSignal): Promise<Category[]> {
-    const response = await fetch(`${API_URL}/categories`,
+export async function getCategories(token: string, params: CategoryQueryParams, signal?: AbortSignal): Promise<CategoryListResponse> {
+    const urlParams = new URLSearchParams({
+        page: params.page.toString(),
+        pageSize: params.pageSize.toString(),
+    })  
+
+    if (params.search) {
+        urlParams.set("search", params.search)
+    }
+
+    if(params.sortBy) {
+        urlParams.set("sortBy", params.sortBy)
+    }
+
+    if(params.sortOrder) {
+        urlParams.set("sortOrder", params.sortOrder)
+    }
+    
+    const response = await fetch(`${API_URL}/categories?${urlParams.toString()}`,
         {
             headers: {
                 "Authorization": `Bearer ${token}`,

@@ -33,16 +33,18 @@ export default function ProductFilters({
         sx={{
             display: "flex",
             gap: 1,
+            mb: 2
         }}
         >
             <TextField 
+            size="small"
             placeholder="Search"
             value={search} 
             onChange={(event)=>{
                 onSearchChange(event.target.value)
             }}/>
 
-            <FormControl sx={{ minWidth: 180, mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 180}}>
                 <InputLabel>Status</InputLabel>
 
                 <Select
@@ -62,10 +64,11 @@ export default function ProductFilters({
                 </Select>
             </FormControl>
 
-            <FormControl sx={{ minWidth: 180, mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 180}}>
                 <InputLabel>Category</InputLabel>
 
                 <Select
+                    sx={{ maxHeight: "180px" }}
                     value={categoryFilter}
                     label="Category"
                     onChange={(event) => {
@@ -84,7 +87,7 @@ export default function ProductFilters({
                 </Select>
             </FormControl>
 
-            <FormControl sx={{ minWidth: 180, mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 180 }}>
                 <InputLabel>Sort</InputLabel>
 
                 <Select
@@ -104,6 +107,7 @@ export default function ProductFilters({
             </FormControl>
 
             <Button
+                size="small"
                 variant="contained"
                 onClick={onResetFilters}
                 sx={{maxHeight: 56}}

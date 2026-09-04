@@ -19,6 +19,7 @@ export default function CategoryTable({ categories, isFetching, onEdit, onDelete
                 <TableHead>
                     <TableRow>
                         <TableCell>Name</TableCell>
+                        <TableCell>Product Count</TableCell>
                         <TableCell align="right">Actions</TableCell>
                     </TableRow>
                 </TableHead>
@@ -40,20 +41,27 @@ export default function CategoryTable({ categories, isFetching, onEdit, onDelete
                                 {category.name}
                             </TableCell>
 
+                            <TableCell>
+                                {category.productCount}
+                            </TableCell>
+
                             <TableCell align="right">
                                 <Button 
                                 variant="contained" 
                                 onClick={() => onEdit(category)}>
                                     Edit
                                 </Button>
-
+                               
                                 <Button 
                                 variant="contained" 
                                 color="error" 
                                 sx={{ ml: 1 }}
+                                title="hello"
+                                disabled={category.productCount > 0}
                                 onClick={() => onDelete(category)}>
                                     Delete
                                 </Button>
+
                             </TableCell>
                         </TableRow>
                     )))
