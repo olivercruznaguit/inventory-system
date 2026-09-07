@@ -1,6 +1,7 @@
-import { Button, LinearProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material"
+import { Button, LinearProgress, Menu, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material"
 import type { Product } from "../types/products"
 import TableEmptyState from "./TableEmptyState"
+import { useState } from "react"
 
 type ProductTableProps = {
     products: Product[]
@@ -8,9 +9,11 @@ type ProductTableProps = {
     hasFilters: boolean
     onEdit: (product: Product) => void
     onDelete: (product: Product) => void
+    onStockIn: (product: Product) => void
+    onStockOut: (product: Product) => void
     onResetFilters: () => void
 }
-export default function ProductTable({ products, isFetching, hasFilters, onEdit, onDelete, onResetFilters }:ProductTableProps){
+export default function ProductTable({ products, isFetching, hasFilters, onEdit, onDelete, onStockIn, onStockOut, onResetFilters }:ProductTableProps){
     const emptyState = hasFilters
     ? {
         title: "No products found",
@@ -21,6 +24,27 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
         description: "Add your first product to get started.",
       }
     
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const open = Boolean(anchorEl);
+
+    const handleClick = (event: React.MouseEvent<HTMLElement>, product: Product) => {
+        setAnchorEl(event.currentTarget)
+        setSelectedProduct(product)
+    }
+
+    const onCloseMenu = () => {
+        setAnchorEl(null)
+        setSelectedProduct(null)
+    }
+
+    const handleAction = (action: (p: Product) => void) => {
+        if (selectedProduct) {
+            action(selectedProduct)
+        }
+        onCloseMenu()
+    };
+
     return (
         <TableContainer component={Paper}>
             { isFetching && <LinearProgress aria-label="Fetching…"/>}
@@ -58,7 +82,7 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
                         </TableRow>
                     ) : (
                         products.map((product) => (
-                            <TableRow key={product.id}>
+                            <TableRow hover key={product.id}>
                                 <TableCell>
                                     {product.name}
                                 </TableCell>
@@ -80,26 +104,34 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
                                 </TableCell>
 
                                 <TableCell align="right">
-                                    <Button
-                                    variant="contained"
-                                    onClick={() => onEdit(product)}>
-                                        Edit
-                                    </Button>
-                                    <Button
-                                    variant="contained"
-                                    color="error"
-                                    sx={{
-                                        ml: 1
-                                    }}
-                                    onClick={() => onDelete(product)}>
-                                        Delete
-                                    </Button>
+                                <Button
+                                    size="small"
+                                    id={`button-${product.id}`}
+                                    aria-controls={open ? "product-menu" : undefined}
+                                    aria-haspopup="true"
+                                    aria-expanded={open}
+                                    onClick={(e) => handleClick(e, product)}
+                                    >
+                                    ⋮
+                                </Button>
                                 </TableCell>
                             </TableRow>
                         ))
                     )}
                 </TableBody>
             </Table>
-        </TableContainer>
+
+            <Menu
+            id="product-menu"
+            anchorEl={anchorEl}
+            open={open}
+            onClose={onCloseMenu}
+            >
+                <MenuItem onClick={() => handleAction(onEdit)}>Edit</MenuItem>
+                <MenuItem onClick={() => handleAction(onStockIn)}>Stock In</MenuItem>
+                <MenuItem onClick={() => handleAction(onStockOut)}>Stock Out</MenuItem>
+                <MenuItem onClick={() => handleAction(onDelete)}>Delete</MenuItem>
+            </Menu>
+</TableContainer>
     )
 }

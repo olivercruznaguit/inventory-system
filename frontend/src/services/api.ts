@@ -1,6 +1,7 @@
 import type { AuthResponse } from "../types/auth"
 import type { CategoryListResponse, CategoryQueryParams } from "../types/categories"
 import type { InventoryDashboard } from "../types/dashboard"
+import type { InventoryRequest } from "../types/inventory"
 import type { CreateProductRequest, ProductListResponse, ProductQueryParams, UpdateProductRequest } from "../types/products"
 
 const API_URL = "http://localhost:8080"
@@ -24,6 +25,7 @@ export async function login(email: string, password: string):Promise<AuthRespons
     return await response.json() 
 }
 
+// INVENTORY
 export async function getInventoryDashboard(token: string):Promise<InventoryDashboard> {
     const response = await fetch(`${API_URL}/inventory/dashboard`, {
         headers: {
@@ -38,6 +40,41 @@ export async function getInventoryDashboard(token: string):Promise<InventoryDash
     return response.json()
 }
 
+export async function stockIn(token: string, productID: string | number, request: InventoryRequest):Promise<void>{
+    const response = await fetch(`${API_URL}/products/${productID}/stock-in`, 
+        {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        }
+    )
+
+    if(!response.ok) {
+        throw new Error("failed to stock in product")
+    }
+}
+
+export async function stockOut(token: string, productID: string | number, request: InventoryRequest):Promise<void>{
+    const response = await fetch(`${API_URL}/products/${productID}/stock-out`, 
+        {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        }
+    )
+
+    if(!response.ok) {
+        throw new Error("failed to stock out product")
+    }
+}
+
+//  PRODUCTS
 export async function getProducts(token: string, params: ProductQueryParams, signal?: AbortSignal): Promise<ProductListResponse> {
     const urlParams = new URLSearchParams({
         page: params.page.toString(),
@@ -125,6 +162,8 @@ export async function deleteProduct(token: string, productID: string | number):P
         throw new Error("Failed to delete product")
     }
 }
+
+// CATEGORIES
 
 export async function getCategories(token: string, params: CategoryQueryParams, signal?: AbortSignal): Promise<CategoryListResponse> {
     const urlParams = new URLSearchParams({

@@ -11,6 +11,8 @@ import { productSortParams } from "../constants/products"
 import ProductFilters from "../components/ProductFilters"
 import ProductTable from "../components/ProductTable"
 import CustomPagination from "../components/CustomPagination"
+import ProductStockInDialog from "../components/ProductStockInDialog"
+import ProductStockOutDialog from "../components/ProductStockOutDialog"
 
 export default function Products() {
     const { token } = useAuth()
@@ -39,15 +41,21 @@ export default function Products() {
 
     const [openCreateDialog, setOpenCreateDialog] = useState(false)
     
-    const [categories, setCategories] = useState<Category[]>([])
-    
-    const pageSize = 10
-    
     const [openUpdateDialog, setOpenUpdateDialog] = useState(false)
+
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+
+    const [openStockInDialog, setOpenStockInDialog] = useState(false)
+
+    const [openStockOutDialog, setOpenStockOutDialog] = useState(false)
+
+    const [categories, setCategories] = useState<Category[]>([])
     
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
-    const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+    const pageSize = 10
+    
+
 
     const handleOpenUpdateProduct = (product: Product) => {
         setSelectedProduct(product)
@@ -57,6 +65,16 @@ export default function Products() {
     const handleOpenDeleteProduct = (product: Product) => {
         setSelectedProduct(product)
         setOpenDeleteDialog(true)
+    }
+
+    const handleOpenStockInProduct = (product: Product) => {
+        setSelectedProduct(product)
+        setOpenStockInDialog(true)
+    }
+
+    const handleOpenStockOutProduct = (product: Product) => {
+        setSelectedProduct(product)
+        setOpenStockOutDialog(true)
     }
 
     const handleProductDeleted = () => {
@@ -275,6 +293,8 @@ export default function Products() {
             products={products}
             onEdit={handleOpenUpdateProduct}
             onDelete={handleOpenDeleteProduct}
+            onStockIn={handleOpenStockInProduct}
+            onStockOut={handleOpenStockOutProduct}
             hasFilters={hasFilters}
             onResetFilters={handleResetFilters}
             />
@@ -316,6 +336,26 @@ export default function Products() {
                 product={selectedProduct}
                 onClose={() => setOpenDeleteDialog(false)}
                 onDeleted={handleProductDeleted}
+            />
+
+            <ProductStockInDialog 
+            open={openStockInDialog}
+            product={selectedProduct}
+            onClose={() => setOpenStockInDialog(false)}
+            onSubmit={()=> {
+                fetchProducts()
+                setSelectedProduct(null)
+            }}
+            />
+
+            <ProductStockOutDialog 
+            open={openStockOutDialog}
+            product={selectedProduct}
+            onClose={() => setOpenStockOutDialog(false)}
+            onSubmit={()=> {
+                fetchProducts()
+                setSelectedProduct(null)
+            }}
             />
         </Box>
     )
