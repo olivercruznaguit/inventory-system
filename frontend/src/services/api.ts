@@ -1,7 +1,7 @@
 import type { AuthResponse } from "../types/auth"
 import type { CategoryListResponse, CategoryQueryParams } from "../types/categories"
 import type { InventoryDashboard } from "../types/dashboard"
-import type { InventoryRequest } from "../types/inventory"
+import type { InventoryRequest, StockMovementResponse } from "../types/inventory"
 import type { CreateProductRequest, ProductListResponse, ProductQueryParams, UpdateProductRequest } from "../types/products"
 
 const API_URL = "http://localhost:8080"
@@ -72,6 +72,22 @@ export async function stockOut(token: string, productID: string | number, reques
     if(!response.ok) {
         throw new Error("failed to stock out product")
     }
+}
+
+export async function stockMovement(token: string, productID: string | number): Promise<StockMovementResponse> {
+    const response = await fetch(`${API_URL}/products/${productID}/stock-movements`, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        }
+    })
+
+    if (!response.ok) {
+        throw new Error("Failed to get product stock movement")
+    }
+
+    return response.json()
 }
 
 //  PRODUCTS

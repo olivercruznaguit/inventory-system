@@ -13,6 +13,7 @@ import ProductTable from "../components/ProductTable"
 import CustomPagination from "../components/CustomPagination"
 import ProductStockInDialog from "../components/ProductStockInDialog"
 import ProductStockOutDialog from "../components/ProductStockOutDialog"
+import ProductStockHistoryDialog from "../components/ProductStockHistoryDialog"
 
 export default function Products() {
     const { token } = useAuth()
@@ -49,6 +50,8 @@ export default function Products() {
 
     const [openStockOutDialog, setOpenStockOutDialog] = useState(false)
 
+    const [openStockHistoryDialog, setOpenStockHistoryDialog] = useState(false)
+
     const [categories, setCategories] = useState<Category[]>([])
     
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -75,6 +78,11 @@ export default function Products() {
     const handleOpenStockOutProduct = (product: Product) => {
         setSelectedProduct(product)
         setOpenStockOutDialog(true)
+    }
+
+    const handleOpenStockHistoryProduct = (product: Product) => {
+        setSelectedProduct(product)
+        setOpenStockHistoryDialog(true)
     }
 
     const handleProductDeleted = () => {
@@ -295,6 +303,7 @@ export default function Products() {
             onDelete={handleOpenDeleteProduct}
             onStockIn={handleOpenStockInProduct}
             onStockOut={handleOpenStockOutProduct}
+            onStockHistory={handleOpenStockHistoryProduct}
             hasFilters={hasFilters}
             onResetFilters={handleResetFilters}
             />
@@ -355,6 +364,14 @@ export default function Products() {
             onSubmit={()=> {
                 fetchProducts()
                 setSelectedProduct(null)
+            }}
+            />
+
+            <ProductStockHistoryDialog 
+            open={openStockHistoryDialog}
+            product={selectedProduct}
+            onClose={() => {
+                setOpenStockHistoryDialog(false)
             }}
             />
         </Box>

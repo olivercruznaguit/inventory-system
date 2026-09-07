@@ -11,9 +11,10 @@ type ProductTableProps = {
     onDelete: (product: Product) => void
     onStockIn: (product: Product) => void
     onStockOut: (product: Product) => void
+    onStockHistory: (product: Product) => void
     onResetFilters: () => void
 }
-export default function ProductTable({ products, isFetching, hasFilters, onEdit, onDelete, onStockIn, onStockOut, onResetFilters }:ProductTableProps){
+export default function ProductTable({ products, isFetching, hasFilters, onEdit, onDelete, onStockIn, onStockOut, onStockHistory, onResetFilters }:ProductTableProps){
     const emptyState = hasFilters
     ? {
         title: "No products found",
@@ -130,6 +131,7 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
                 <MenuItem onClick={() => handleAction(onEdit)}>Edit</MenuItem>
                 <MenuItem onClick={() => handleAction(onStockIn)}>Stock In</MenuItem>
                 <MenuItem onClick={() => handleAction(onStockOut)}>Stock Out</MenuItem>
+                <MenuItem onClick={() => handleAction(onStockHistory)}>Stock History</MenuItem>
                 <MenuItem onClick={() => handleAction(onDelete)}>Delete</MenuItem>
             </Menu>
 </TableContainer>
