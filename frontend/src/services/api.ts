@@ -53,7 +53,8 @@ export async function stockIn(token: string, productID: string | number, request
     )
 
     if(!response.ok) {
-        throw new Error("failed to stock in product")
+        const error = await response.json()
+        throw new Error(error.error ?? "Failed to stock in product")
     }
 }
 
@@ -70,7 +71,8 @@ export async function stockOut(token: string, productID: string | number, reques
     )
 
     if(!response.ok) {
-        throw new Error("failed to stock out product")
+        const error = await response.json()
+        throw new Error(error.error ?? "Failed to stock in product")
     }
 }
 
@@ -229,7 +231,9 @@ export async function createCategory(token: string, name: string): Promise<void>
     )
 
     if (!response.ok) {
-        throw new Error("Failed to create category")
+        const error = new Error("Failed to create category")
+        error.cause = response.status
+        throw error
     }
 }
 
@@ -261,7 +265,10 @@ export async function updateCategory(token: string, categoryID: string | number,
         }
     )
 
+    
     if (!response.ok) {
-        throw new Error("Failed to update category")
+        const error = new Error("Failed to create category")
+        error.cause = response.status
+        throw error
     }
 }

@@ -1,7 +1,8 @@
-import { Button, LinearProgress, Menu, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material"
+import { Button, Chip, LinearProgress, Menu, MenuItem, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton } from "@mui/material"
 import type { Product } from "../types/products"
 import TableEmptyState from "./TableEmptyState"
 import { useState } from "react"
+import { MoreVert } from "@mui/icons-material"
 
 type ProductTableProps = {
     products: Product[]
@@ -49,7 +50,7 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
     return (
         <TableContainer component={Paper}>
             { isFetching && <LinearProgress aria-label="Fetching…"/>}
-            <Table>
+            <Table size="small">
                 <TableHead>
                     <TableRow>
                         <TableCell>Name</TableCell>
@@ -71,7 +72,7 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
                                 action={
                                     hasFilters ? (
                                         <Button
-                                        variant="contained" 
+                                        variant="outlined" 
                                         onClick={onResetFilters}
                                         >
                                             Reset Filters
@@ -101,20 +102,23 @@ export default function ProductTable({ products, isFetching, hasFilters, onEdit,
                                 </TableCell>
 
                                 <TableCell>
-                                    {product.status}
+                                    { product.status === "ACTIVE" ? 
+                                    <Chip color="success" label="Active" /> : 
+                                    <Chip color="error" label="Inactive" />  }
                                 </TableCell>
 
                                 <TableCell align="right">
-                                <Button
-                                    size="small"
-                                    id={`button-${product.id}`}
-                                    aria-controls={open ? "product-menu" : undefined}
-                                    aria-haspopup="true"
-                                    aria-expanded={open}
-                                    onClick={(e) => handleClick(e, product)}
+                                    <IconButton
+                                        size="small"
+                                        aria-label={`Actions for ${product.name}`}
+                                        id={`button-${product.id}`}
+                                        aria-controls={open ? "product-menu" : undefined}
+                                        aria-haspopup="true"
+                                        aria-expanded={open ? "true" : undefined}
+                                        onClick={(e) => handleClick(e, product)}
                                     >
-                                    ⋮
-                                </Button>
+                                        <MoreVert />
+                                    </IconButton>
                                 </TableCell>
                             </TableRow>
                         ))

@@ -329,7 +329,7 @@ export default function Products() {
             />
 
             <UpdateProductDialog
-                key={selectedProduct?.id ?? 'closed'}
+                key={selectedProduct?.id ?? 'update-product'}
                 open={openUpdateDialog}
                 categories={categories}
                 product={selectedProduct}
@@ -348,6 +348,7 @@ export default function Products() {
             />
 
             <ProductStockInDialog 
+            key={`stock-in-${selectedProduct?.id ?? "closed"}`}
             open={openStockInDialog}
             product={selectedProduct}
             onClose={() => setOpenStockInDialog(false)}
@@ -358,6 +359,7 @@ export default function Products() {
             />
 
             <ProductStockOutDialog 
+            key={`stock-out-${selectedProduct?.id ?? "closed"}`}
             open={openStockOutDialog}
             product={selectedProduct}
             onClose={() => setOpenStockOutDialog(false)}

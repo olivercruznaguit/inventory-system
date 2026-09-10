@@ -1,35 +1,61 @@
 import { Drawer, List, ListItemButton, ListItemText, Toolbar } from "@mui/material";
-import { Link } from "react-router-dom";
-
+import { NavLink } from "react-router-dom";
 
 const drawerWidth = 220
 export default function Sidebar() {
     return (
         <Drawer
-        variant="permanent"
+            variant="permanent"
             sx={{
                 width: drawerWidth,
                 flexShrink: 0,
                 "& .MuiDrawer-paper": {
                     width: drawerWidth,
                     boxSizing: "border-box",
+                    backgroundColor: "background.paper",
+                    borderRight: "1px solid",
+                    borderColor: "divider",
                 },
             }}
         >
             <Toolbar />
             
             <List>
-                <ListItemButton component={Link} to="/dashboard">
-                    <ListItemText primary="Dashboard" />
-                </ListItemButton>
+                <NavLink
+                    to="/dashboard"
+                    end
+                    style={{ textDecoration: "none", color: "inherit" }}
+                >
+                    {({ isActive }) => (
+                        <ListItemButton selected={isActive}>
+                            <ListItemText primary="Dashboard" />
+                        </ListItemButton>
+                    )}
+                </NavLink>
 
-                <ListItemButton component={Link} to="/products">
-                    <ListItemText primary="Products" />
-                </ListItemButton>
+                <NavLink
+                    to="/products"
+                    end
+                    style={{ textDecoration: "none", color: "inherit" }}
+                >
+                    {({ isActive }) => (
+                        <ListItemButton selected={isActive}>
+                            <ListItemText primary="Products" />
+                        </ListItemButton>
+                    )}
+                </NavLink>
 
-                <ListItemButton component={Link} to="/categories">
-                    <ListItemText primary="Categories" />
-                </ListItemButton>
+                <NavLink
+                    to="/categories"
+                    end
+                    style={{ textDecoration: "none", color: "inherit" }}
+                >
+                    {({ isActive }) => (
+                        <ListItemButton selected={isActive}>
+                            <ListItemText primary="Categories" />
+                        </ListItemButton>
+                    )}
+                </NavLink>
             </List>
         </Drawer>
     )

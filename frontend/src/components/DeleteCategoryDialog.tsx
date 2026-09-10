@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth"
 import type { Category } from "../types/categories"
 import { useState } from "react"
 import { deleteCategory } from "../services/api"
+import { useSnackbar } from "notistack"
 
 type DeleteCategoryDialog = {
     open: boolean
@@ -14,9 +15,9 @@ type DeleteCategoryDialog = {
 export default function DeleteCategoryDialog({ open, category, onClose, onDeleted}: DeleteCategoryDialog) {
     const { token } = useAuth()
 
-    const [isDeleting, setIsDeleting] = useState(false)
+    const { enqueueSnackbar } = useSnackbar()
 
-    const [error, setError] = useState<string | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     async function handleSubmit() {
         if(!token || !category) {
@@ -28,19 +29,25 @@ export default function DeleteCategoryDialog({ open, category, onClose, onDelete
             
             await deleteCategory(token, category.id)
 
-            handleClose()
+            onClose()
             onDeleted()
+
+            enqueueSnackbar("Category deleted", {variant: "success"})
         } catch (error) {
             console.error(error)
-            setError("Failed to delete category")
+
+            enqueueSnackbar("Failed to delete category", { variant: "error" })
         } finally {
             setIsDeleting(false)
         }
     }
 
 
-    const handleClose = () => {
-        setError(null)
+    function handleClose() {
+        if (isDeleting) {
+            return
+        }
+
         onClose()
     }
 
@@ -54,22 +61,13 @@ export default function DeleteCategoryDialog({ open, category, onClose, onDelete
             </DialogTitle>
 
             <DialogContent>
-                <Typography variant="body1">
-                    Are you sure you want to delete "{category?.name}"?    
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                    Are you sure you want to delete "{category?.name}"?
                 </Typography>
 
-                <Typography variant="body1">
-                    This action cannot be undone.   
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                    This action cannot be undone.
                 </Typography>
-
-                {error && (
-                    <Typography
-                        color="error"
-                        sx={{ mt: 2 }}
-                    >
-                        {error}
-                    </Typography>
-                )}
             </DialogContent>
 
             <DialogActions>
@@ -82,8 +80,8 @@ export default function DeleteCategoryDialog({ open, category, onClose, onDelete
                 <Button 
                 variant="contained"
                 color="error"
-                sx={{ ml: 1 }}
                 onClick={handleSubmit}
+                disabled={isDeleting}
                 >
                     { isDeleting ? "Deleting..." : "Delete"}
                 </Button>

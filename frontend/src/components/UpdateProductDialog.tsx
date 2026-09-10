@@ -1,9 +1,10 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import type { Category } from "../types/categories"
 import type { Product, UpdateProductRequest } from "../types/products"
 import { useState } from "react"
 import { useAuth } from "../hooks/useAuth"
 import { updateProduct } from "../services/api"
+import { useSnackbar } from "notistack"
 
 type UpdateProductDialogProps = {
     open: boolean
@@ -13,10 +14,18 @@ type UpdateProductDialogProps = {
     onUpdated: () => void
 }
 
+type FormErrors = {
+    name?: string
+    price?: string
+    minimumStock?: string
+}
+
 export default function UpdateProductDialog({open, product, categories, onClose, onUpdated}: UpdateProductDialogProps) {
     const { token } = useAuth()
 
-    const [form, setForm] = useState<UpdateProductRequest | null>({
+    const { enqueueSnackbar } = useSnackbar()
+
+    const [form, setForm] = useState<UpdateProductRequest>({
         name: product?.name || "",
         price: product?.price ?? 0,
         status: product?.status ?? "ACTIVE",
@@ -24,49 +33,76 @@ export default function UpdateProductDialog({open, product, categories, onClose,
         minimumStock: product?.minimumStock ?? 0
     })
 
-    const [error, setError] = useState<string | null>(null)
+    const [errors, setErrors] = useState<FormErrors>({})
    
-    const [isUpdating, setIsUpdating] = useState<boolean>(false)
+    const [isUpdating, setIsUpdating] = useState(false)
 
     async function handleSubmit() {
-        if (!token || !form || !product) {
+        if (!token || !product) {
             return
         }
 
-        if (!form.name.trim()) {
-            setError("Product name is required")
-            return
-        }
+        const validationErrors = validateForm()
 
-        if (form.price <= 0) {
-            setError("Price must be greater than 0")
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors)
             return
         }
 
         try {
             setIsUpdating(true)
-            setError(null)
+            setErrors({})
 
-            await updateProduct(token, product.id, form)
+            const request = {
+                ...form,
+                name: form.name.trim(),
+            }
 
-            setForm(null)
+            await updateProduct(token, product.id, request)
 
             onClose()
             onUpdated()
+
+            enqueueSnackbar("Product updated", { variant: "success" })
         } catch (error) {
             console.error(error)
-            setError("Failed to update product")
+            enqueueSnackbar("Failed to update product", { variant: "error" })
         } finally {
             setIsUpdating(false)
         }
     }
 
-    if (!form) return null;
+    function validateForm(): FormErrors {
+        const errors: FormErrors = {}
+
+        if (!form.name.trim()) {
+            errors.name = "Product name is required"
+        }
+
+        if (form.price <= 0) {
+            errors.price = "Price must be greater than 0"
+        }
+
+        if (form.minimumStock < 0) {
+            errors.minimumStock = "Minimum stock cannot be negative"
+        }
+
+        return errors
+    }
+
+    function handleClose() {
+        if (isUpdating) {
+            return
+        }
+
+        setErrors({})
+        onClose()
+    }
 
     return (
         <Dialog 
         open={open} 
-        onClose={onClose} 
+        onClose={handleClose} 
         fullWidth 
         maxWidth="sm">
             <DialogTitle>
@@ -75,7 +111,9 @@ export default function UpdateProductDialog({open, product, categories, onClose,
 
             <DialogContent>
                 <TextField
+                    required
                     fullWidth
+                    size="small"
                     label="Name"
                     margin="normal"
                     value={form.name}
@@ -85,11 +123,14 @@ export default function UpdateProductDialog({open, product, categories, onClose,
                             name: event.target.value,
                         })
                     }
+                    error={Boolean(errors.name)}
+                    helperText={errors.name}
                 />
 
                 <TextField
                     fullWidth
                     label="Price"
+                    size="small"
                     type="number"
                     margin="normal"
                     value={form.price}
@@ -99,9 +140,14 @@ export default function UpdateProductDialog({open, product, categories, onClose,
                             price: Number(event.target.value),
                         })
                     }
+                    error={Boolean(errors.price)}
+                    helperText={errors.price}
                 />
 
-                <FormControl fullWidth margin="normal">
+                <FormControl 
+                fullWidth 
+                size="small"
+                margin="normal">
                     <InputLabel>Category</InputLabel>
 
                     <Select
@@ -134,7 +180,10 @@ export default function UpdateProductDialog({open, product, categories, onClose,
                     </Select>
                 </FormControl>
 
-                <FormControl fullWidth margin="normal">
+                <FormControl 
+                fullWidth 
+                size="small"
+                margin="normal">
                     <InputLabel>Status</InputLabel>
 
                     <Select
@@ -166,6 +215,7 @@ export default function UpdateProductDialog({open, product, categories, onClose,
                     fullWidth
                     label="Minimum Stock"
                     type="number"
+                    size="small"
                     margin="normal"
                     value={form.minimumStock}
                     onChange={(event) =>
@@ -174,21 +224,14 @@ export default function UpdateProductDialog({open, product, categories, onClose,
                             minimumStock: Number(event.target.value),
                         })
                     }
+                    error={Boolean(errors.minimumStock)}
+                    helperText={errors.minimumStock}
                 />
-
-                {error && (
-                    <Typography
-                        color="error"
-                        sx={{ mt: 2 }}
-                    >
-                        {error}
-                    </Typography>
-                )}
 
             </DialogContent>
 
              <DialogActions>
-                <Button onClick={onClose}>
+                <Button onClick={handleClose}>
                     Cancel
                 </Button>
 

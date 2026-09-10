@@ -1,8 +1,9 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from "@mui/material"
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material"
 import { useAuth } from "../hooks/useAuth"
 import type { Category } from "../types/categories"
 import { useState } from "react"
 import { updateCategory } from "../services/api"
+import { useSnackbar } from "notistack"
 
 type UpdateCategoryDialogProps = {
     open: boolean
@@ -11,9 +12,10 @@ type UpdateCategoryDialogProps = {
     onUpdated: () => void
 }
 
-
 export default function UpdateCategoryDialog({ open, category, onClose, onUpdated }: UpdateCategoryDialogProps) {
     const { token } = useAuth() 
+
+    const { enqueueSnackbar } = useSnackbar()
 
     const [isUpdating, setIsUpdating] = useState(false)
 
@@ -23,7 +25,6 @@ export default function UpdateCategoryDialog({ open, category, onClose, onUpdate
 
     async function handleSubmit() { 
         if(!token || !category) {
-            setError("Invalid category or token")
             return
         }
 
@@ -36,36 +37,41 @@ export default function UpdateCategoryDialog({ open, category, onClose, onUpdate
             setIsUpdating(true)
             setError(null)
 
-
-            await updateCategory(token, category.id, name)
-
+            await updateCategory(token, category.id, name.trim())
+            
             onClose()
             onUpdated()
+
+            enqueueSnackbar("Category updated", {variant: "success"})
         } catch (error) {
             console.error(error)
+
+            if (error instanceof Error && error.cause === 409) {
+                setError("A category with this name already exists")
+                return
+            }
+
+            enqueueSnackbar("Failed to update category", { variant: "error" })
             setError("Failed to update category")
         } finally {
             setIsUpdating(false)
         }
     }
 
-    // useEffect(()=>{
-    //     if(category) {
-    //         setName(category.name)
-    //     } else {
-    //         setName(null)
-    //     }
-    // },[category])
+    function handleClose() {
+        if (isUpdating) {
+            return
+        }
 
-
-    // if(!name) {
-    //     return null
-    // }
-
+        setName("")
+        setError(null)
+        onClose()
+    }
+    
     return (
         <Dialog 
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
         maxWidth="sm"
         fullWidth>
 
@@ -76,25 +82,19 @@ export default function UpdateCategoryDialog({ open, category, onClose, onUpdate
             <DialogContent>
                 <TextField
                     fullWidth
+                    required
                     label="Name"
                     margin="normal"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    error={Boolean(error)}
+                    size="small"
+                    helperText={error ?? "Enter a category name"}
                 />
-
-
-                { error && (
-                    <Typography 
-                    color="error" 
-                    sx={{ mt: 2 }}>
-                        {error}
-                    </Typography>
-                )}
-
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={onClose}>
+                <Button onClick={handleClose}>
                     Cancel
                 </Button>
 

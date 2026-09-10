@@ -16,13 +16,15 @@ export default function CategoryFilters({search, categorySort, onSearchChange, o
         sx={{
             display: "flex",
             gap: 1,
-            mb: 2
+            mb: 2,
+            flexWrap: "wrap",
         }}
         >
             <TextField 
             size="small"
             placeholder="Search"
             value={search} 
+            sx={{ minWidth: 240 }}
             onChange={(event)=>{
                 onSearchChange(event.target.value)
             }}/>
@@ -47,7 +49,7 @@ export default function CategoryFilters({search, categorySort, onSearchChange, o
             
             <Button
                 size="small"
-                variant="contained"
+                variant="outlined"
                 onClick={onResetFilters}
             >
                 Reset Filters

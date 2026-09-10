@@ -3,6 +3,7 @@ import type { Product } from "../types/products"
 import { useState } from "react"
 import { useAuth } from "../hooks/useAuth"
 import { deleteProduct } from "../services/api"
+import { useSnackbar } from "notistack"
 
 type DeleteProductDialogProps = {
     open: boolean
@@ -13,10 +14,10 @@ type DeleteProductDialogProps = {
 
 export default function DeleteProductDialog({ open, product, onDeleted, onClose }:DeleteProductDialogProps){
     const { token } = useAuth()
-    
-    const [isDeleting, setIsDeleting] = useState<boolean>(false)
 
-    const [error, setError] = useState<string | null>(null)
+    const { enqueueSnackbar } = useSnackbar()
+    
+    const [isDeleting, setIsDeleting] = useState(false)
 
     async function handleSubmit() {
         if (!token || !product) {
@@ -30,44 +31,46 @@ export default function DeleteProductDialog({ open, product, onDeleted, onClose 
 
             onClose()
             onDeleted()
+
+            enqueueSnackbar("Product deleted", { variant: "success" })
         } catch (error) {
             console.error(error)
-            setError("Failed to delete product")
+
+            enqueueSnackbar("Failed to delete product", { variant: "error" })
         } finally {
             setIsDeleting(false)
         }
     }
 
+    function handleClose() {
+        if (isDeleting) {
+            return
+        }
+
+        onClose()
+    }
+
     return(
         <Dialog 
         open={open} 
-        onClose={onClose}>
+        onClose={handleClose}>
             <DialogTitle>
                 Delete Product
             </DialogTitle>
 
             <DialogContent>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ mb: 1 }}>
                     Are you sure you want to delete "{product?.name}"?    
                 </Typography>
 
-                <Typography variant="body1">
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
                     This action cannot be undone.   
                 </Typography>
-
-                {error && (
-                    <Typography
-                        color="error"
-                        sx={{ mt: 2 }}
-                    >
-                        {error}
-                    </Typography>
-                )}
             </DialogContent>
 
             <DialogActions>
                 <Button 
-                onClick={onClose}>
+                onClick={handleClose}>
                     Cancel
                 </Button>
 

@@ -1,4 +1,4 @@
-import { Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material"
+import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material"
 import { useAuth } from "../hooks/useAuth"
 import { useCallback, useEffect, useState } from "react"
 import type { StockMovement } from "../types/inventory"
@@ -153,7 +153,9 @@ export default function ProductStockHistoryDialog({ open, product, onClose }: Pr
                                         </TableCell>
                                         
                                         <TableCell>
-                                            <Typography variant="body1" color={stockMovement.type === "IN" ? "success" : "error"}>{stockMovement.type}</Typography>
+                                            { stockMovement.type === "IN" ? 
+                                            <Chip color="success" label="IN" /> : 
+                                            <Chip color="error" label="OUT" />  }
                                         </TableCell>
                                         
                                         <TableCell>

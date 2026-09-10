@@ -96,13 +96,13 @@ func (h *InventoryHandler) StockOut(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid product ID"))
 		return
 	}
 
 	var req request.StockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid request body"))
 		return
 	}
 
@@ -116,17 +116,13 @@ func (h *InventoryHandler) StockOut(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInsufficientStock):
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Insufficient stock",
-			})
+			c.JSON(http.StatusBadRequest, response.NewErrorResponse("Insufficient stock"))
 
 		case errors.Is(err, repository.ErrProductNotFound):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Product not found",
-			})
+			c.JSON(http.StatusNotFound, response.NewErrorResponse("Product not found"))
 
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
 		}
 
 		return

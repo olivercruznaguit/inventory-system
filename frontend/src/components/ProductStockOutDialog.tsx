@@ -13,14 +13,18 @@ type ProductStockOutDialogProp = {
     onSubmit: () => void
 }
 
+type FormErrors = {
+    quantity?: string
+}
+
 export default function ProductStockOutDialog({product, open, onClose, onSubmit}: ProductStockOutDialogProp) {
     const { enqueueSnackbar } = useSnackbar();
 
     const { token } = useAuth()
 
-    const [error, setError] = useState<string | null>(null)
+    const [errors, setErrors] = useState<FormErrors>({})
     
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const [form, setForm] = useState<InventoryRequest>({
         quantity: 1,
@@ -32,35 +36,74 @@ export default function ProductStockOutDialog({product, open, onClose, onSubmit}
             return
         }
 
-        if (form.quantity <= 0 || form.quantity > product.quantity) {
-            setError("Invalid quantity")
+        const validationErrors = validateForm(product)
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors)
             return
         }
 
+        const quantity = form.quantity
+
         try{
-            setError(null)
+            setErrors({})
             setIsSubmitting(true)
 
             await stockOut(token, product.id, form)
 
+            setForm({
+                quantity: 1,
+                reason: ""
+            })
+
             onClose()
             onSubmit()
+
             enqueueSnackbar(
-                `Successfully removed ${form.quantity} units`,
+                `Successfully removed ${quantity} ${quantity > 1 ? "units" : "unit" }`,
                 { variant: "success" }
             )
         } catch (error) {
             console.error(error)
-            setError("Failed to stock out product")
+            
+            if (error instanceof Error) {
+                enqueueSnackbar(error.message, { variant: "error" })
+            }
         } finally {
             setIsSubmitting(false)
         }
     }
 
+    function handleClose() {
+        if (isSubmitting) {
+            return
+        }
+
+        setForm({
+            quantity: 1,
+            reason: ""
+        })
+
+        setErrors({})
+        onClose()
+    }
+
+    function validateForm(product: Product): FormErrors {
+        const errors: FormErrors = {}
+
+        if (form.quantity <= 0) {
+            errors.quantity = "Quantity must be greater than 0"
+        } else if (form.quantity > product.quantity) {
+            errors.quantity = "Quantity must not be greater than current stock"
+        }
+
+        return errors
+    }
+
     return (
         <Dialog
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
         fullWidth
         maxWidth="sm"
         >
@@ -104,17 +147,22 @@ export default function ProductStockOutDialog({product, open, onClose, onSubmit}
                 fullWidth
                 type="number"
                 onChange={(event) =>
-                        setForm({
-                            ...form,
-                            quantity: Number(event.target.value),
-                        })
-                    }
+                    setForm({
+                        ...form,
+                        quantity: Number(event.target.value),
+                    })
+                }
+                error={Boolean(errors.quantity)}
+                helperText={errors.quantity ?? "Enter quantity"}
+                size="small"
                 />
 
-                 <TextField
+                <TextField
+                value={form.reason}
                 label="Reason (optional)"
                 margin="normal"
                 fullWidth
+                size="small"
                 onChange={(event) =>
                     setForm({
                         ...form,
@@ -123,20 +171,11 @@ export default function ProductStockOutDialog({product, open, onClose, onSubmit}
                 }
                 />
 
-                { error && (
-                    <Typography 
-                    color="error"
-                    sx={{ mt: 2 }}
-                    >
-                        {error}
-                    </Typography>
-                )}
-
             </DialogContent>
 
             <DialogActions>
                 <Button
-                onClick={onClose}
+                onClick={handleClose}
                 >
                     Cancel
                 </Button>

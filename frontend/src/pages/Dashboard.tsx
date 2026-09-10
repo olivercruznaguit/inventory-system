@@ -2,8 +2,9 @@ import { useEffect, useState } from "react"
 import { useAuth } from "../hooks/useAuth"
 import { getInventoryDashboard } from "../services/api"
 import type { InventoryDashboard } from "../types/dashboard"
-import { Box, Grid, Typography } from "@mui/material"
+import { Alert, Box, CircularProgress, Grid, Typography } from "@mui/material"
 import StatCard from "../components/StatCard"
+import InventoryAlertCard from "../components/InventoryAlertCard"
 
 export default function Dashboard() {
     const { token } = useAuth()
@@ -29,13 +30,28 @@ export default function Dashboard() {
 
         fetchDashboard()
     }, [token])
-
+    
     if (isLoading) {
-        return <div>Loading...</div>
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 300,
+                }}
+            >
+                <CircularProgress />
+            </Box>
+        )
     }
 
     if (!dashboard) {
-        return <div>Failed to load dashboard</div>
+        return (
+            <Alert severity="error">
+                Failed to load dashboard.
+            </Alert>
+        )
     }
 
     const stats = [
@@ -55,14 +71,14 @@ export default function Dashboard() {
             title: "Quantity on Hand",
             value: dashboard.totalQuantityOnHand,
         },
-        {
-            title: "Low Stock",
-            value: dashboard.lowStockProducts,
-        },
-        {
-            title: "Out of Stock",
-            value: dashboard.outOfStockProducts,
-        },
+        // {
+        //     title: "Low Stock",
+        //     value: dashboard.lowStockProducts,
+        // },
+        // {
+        //     title: "Out of Stock",
+        //     value: dashboard.outOfStockProducts,
+        // },
         {
             title: "Total Inventory Value",
             value: `₱${dashboard.totalInventoryValue.toFixed(2)}`,
@@ -88,6 +104,20 @@ export default function Dashboard() {
                     </Grid>
                 ))}
             </Grid>
+
+            <InventoryAlertCard
+                title="Low Stock"
+                count={dashboard.lowStockProducts}
+                description="Products approaching minimum stock"
+                severity="warning"
+            />
+
+            <InventoryAlertCard
+                title="Out of Stock"
+                count={dashboard.outOfStockProducts}
+                description="Products with no stock available"
+                severity="error"
+            />
         </Box>
     )
 }

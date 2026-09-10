@@ -1,7 +1,8 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from "@mui/material";
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { createCategory } from "../services/api";
+import { useSnackbar } from "notistack";
 
 type CreateCategoryDialogProps = {
     open: boolean
@@ -12,11 +13,23 @@ type CreateCategoryDialogProps = {
 export default function CreateCategoryDialog({ open, onClose, onCreated }: CreateCategoryDialogProps) {
     const { token } = useAuth()
 
+    const { enqueueSnackbar } = useSnackbar()
+
     const [isCreating, setIsCreating] = useState(false)
 
     const [name, setName] = useState("")
 
     const [error, setError] = useState<string | null>(null)
+
+    function handleClose() {
+        if (isCreating) {
+            return
+        }
+
+        setName("")
+        setError(null)
+        onClose()
+    }
 
     async function handleSubmit() {
         if(!token) {
@@ -32,12 +45,22 @@ export default function CreateCategoryDialog({ open, onClose, onCreated }: Creat
             setIsCreating(true)
             setError(null)
 
-            await createCategory(token, name)
+            await createCategory(token, name.trim())
 
+            setName("")
             onClose()
             onCreated()
-        } catch (error) {
+
+            enqueueSnackbar("Category added", {variant: "success"})
+        }  catch (error) {
             console.error(error)
+
+            if (error instanceof Error && error.cause === 409) {
+                setError("A category with this name already exists")
+                return
+            }
+
+            enqueueSnackbar("Failed to add category", { variant: "error" })
             setError("Failed to create category")
         } finally {
             setIsCreating(false)
@@ -47,36 +70,31 @@ export default function CreateCategoryDialog({ open, onClose, onCreated }: Creat
     return (
         <Dialog 
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
         maxWidth="sm"
         fullWidth>
 
             <DialogTitle>
-                Create Product
+                Create Category
             </DialogTitle>
 
             <DialogContent>
                 <TextField
                     fullWidth
+                    required
                     label="Name"
                     margin="normal"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    error={Boolean(error)}
+                    size="small"
+                    helperText={error ?? "Enter a category name"}
                 />
-
-
-                { error && (
-                    <Typography 
-                    color="error" 
-                    sx={{ mt: 2 }}>
-                        {error}
-                    </Typography>
-                )}
 
             </DialogContent>
 
             <DialogActions>
-                <Button onClick={onClose}>
+                <Button onClick={handleClose}>
                     Cancel
                 </Button>
 

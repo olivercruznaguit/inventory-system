@@ -1,21 +1,34 @@
-import { Button, LinearProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import { Button, IconButton, LinearProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import type { Category } from "../types/categories";
 import TableEmptyState from "./TableEmptyState";
+import { DeleteOutlineOutlined, EditOutlined } from "@mui/icons-material";
 
 type CategoryTableProps = {
     categories: Category[];
     isFetching: boolean
+    hasFilters: boolean
     onEdit: (category: Category) => void
     onDelete: (category: Category) => void
+    onResetFilters: () => void
 }
 
-export default function CategoryTable({ categories, isFetching, onEdit, onDelete }: CategoryTableProps) {
+export default function CategoryTable({ categories, isFetching, hasFilters, onEdit, onDelete, onResetFilters }: CategoryTableProps) {
+    const emptyState = hasFilters
+    ? {
+        title: "No categories found",
+        description: "Try adjusting your search or filters.",
+    }
+    : {
+        title: "No categories yet",
+        description: "Add your first category to get started.",
+    }
+
 
     return (
         <TableContainer component={Paper}>
             { isFetching && <LinearProgress aria-label="Fetching…"/>}
 
-            <Table>
+            <Table size="small">
                 <TableHead>
                     <TableRow>
                         <TableCell>Name</TableCell>
@@ -27,10 +40,20 @@ export default function CategoryTable({ categories, isFetching, onEdit, onDelete
                 <TableBody>
                     {categories.length === 0 && !isFetching ? (
                         <TableRow>
-                            <TableCell colSpan={6} align="center">
+                            <TableCell colSpan={3} align="center">
                                 <TableEmptyState
-                                title="No categories yet"
-                                description="Add your first category to get started."
+                                    title={emptyState.title}
+                                    description={emptyState.description}
+                                    action={
+                                        hasFilters ? (
+                                            <Button
+                                                variant="outlined"
+                                                onClick={onResetFilters}
+                                            >
+                                                Reset Filters
+                                            </Button>
+                                        ) : null
+                                    }
                                 />
                             </TableCell>
                         </TableRow>
@@ -46,21 +69,24 @@ export default function CategoryTable({ categories, isFetching, onEdit, onDelete
                             </TableCell>
 
                             <TableCell align="right">
-                                <Button 
-                                variant="contained" 
-                                onClick={() => onEdit(category)}>
-                                    Edit
-                                </Button>
-                               
-                                <Button 
-                                variant="contained" 
-                                color="error" 
-                                sx={{ ml: 1 }}
-                                title="hello"
-                                disabled={category.productCount > 0}
-                                onClick={() => onDelete(category)}>
-                                    Delete
-                                </Button>
+                                <IconButton
+                                    size="small"
+                                    aria-label={`Edit ${category.name}`}
+                                    onClick={() => onEdit(category)}
+                                >
+                                    <EditOutlined />
+                                </IconButton>
+
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    sx={{ ml: 0.5 }}
+                                    aria-label={`Delete ${category.name}`}
+                                    disabled={category.productCount > 0}
+                                    onClick={() => onDelete(category)}
+                                >
+                                    <DeleteOutlineOutlined />
+                                </IconButton>
 
                             </TableCell>
                         </TableRow>

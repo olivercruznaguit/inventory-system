@@ -84,6 +84,8 @@ export default function Categories() {
         setPage(1)
     }
 
+    const hasFilters = Boolean(search || categorySort)
+
     const fetchCategories = useCallback(async (signal?: AbortSignal) => {
         if (!token) {
             return
@@ -160,12 +162,22 @@ export default function Categories() {
         )
     }
 
-    if (error) {
+    if (error && !categories.length) {
         return <Alert severity="error">{error}</Alert>
     }
 
     return(
         <Box>
+            {error && (
+                <Alert
+                    severity="error"
+                    sx={{ mb: 2 }}
+                    onClose={() => setError(null)}
+                >
+                    {error}
+                </Alert>
+            )}
+
             <Box
                 sx={{
                     display: "flex",
@@ -210,7 +222,9 @@ export default function Categories() {
             categories={categories} 
             isFetching={isFetching} 
             onEdit={handleOpenEditCategory} 
-            onDelete={handleOpenDeleteCategory}            
+            onDelete={handleOpenDeleteCategory}   
+            hasFilters={hasFilters}         
+            onResetFilters={handleResetFilters}
             />
 
             <CreateCategoryDialog
