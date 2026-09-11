@@ -21,7 +21,8 @@ export default function ProductStockHistoryDialog({ open, product, onClose }: Pr
     const [productStockMovements, setProductStockMovements] = useState<StockMovement[] | null>(null)
 
     const formatDate = (date: string) => {
-        if (!date) return '—';
+        if (!date) return '—'
+        
         return new Date(date).toLocaleString(undefined, {
             year: 'numeric',
             month: 'short',
@@ -29,8 +30,8 @@ export default function ProductStockHistoryDialog({ open, product, onClose }: Pr
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
-        });
-    };
+        })
+    }
 
     const fetchStockMovements = useCallback(async ()=>{
          if(!open || !token || !product) {
@@ -154,8 +155,8 @@ export default function ProductStockHistoryDialog({ open, product, onClose }: Pr
                                         
                                         <TableCell>
                                             { stockMovement.type === "IN" ? 
-                                            <Chip color="success" label="IN" /> : 
-                                            <Chip color="error" label="OUT" />  }
+                                            <Chip size="small" color="success" label="IN" /> : 
+                                            <Chip size="small" color="error" label="OUT" />  }
                                         </TableCell>
                                         
                                         <TableCell>

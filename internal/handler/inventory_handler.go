@@ -197,3 +197,40 @@ func (h *InventoryHandler) GetInventoryDashboard(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response.NewInventoryDashboardResponse(inventoryDashboard))
 }
+
+// GetRecent godoc
+// @Summary      Retrieve the recent stock movements
+// @Description  Get a list of recent stock movements
+// @Tags         Inventory
+// @Accept       json
+// @Produce      json
+// @Param        limit query int false "Max number of items to retrieve"
+// @Success      200  {object}  response.RecentStockMovementListResponse
+// @Failure      500  {object}  response.ErrorResponse
+// @Router       /inventory/movements [get]
+func (h *InventoryHandler) GetRecent(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	limitStr := c.DefaultQuery("limit", "10")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse("Invalid limit"))
+		return
+	}
+
+	recentStockMovements, err := h.service.GetRecentStockMovements(ctx, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse("Internal server error"))
+		return
+	}
+
+	responses := make([]response.RecentStockMovementResponse, 0, len(recentStockMovements))
+	for _, recentStockMovement := range recentStockMovements {
+		responses = append(responses, response.NewRecentStockMovementResponse(recentStockMovement))
+	}
+
+	c.JSON(http.StatusOK, response.RecentStockMovementListResponse{
+		Data: responses,
+	})
+}

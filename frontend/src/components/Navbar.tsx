@@ -1,7 +1,12 @@
-import { AppBar, Box, Button, Toolbar, Typography } from "@mui/material"
+import { AppBar, Box, Button, IconButton, Toolbar, Typography } from "@mui/material"
 import { useAuth } from "../hooks/useAuth"
+import MenuIcon from '@mui/icons-material/Menu';
 
-export default function Navbar(){
+type NavbarProps = {
+    onMenuClick: () => void
+}
+
+export default function Navbar({ onMenuClick }: NavbarProps){
     const {user, logout} = useAuth()
     return(
         <AppBar
@@ -16,6 +21,18 @@ export default function Navbar(){
         }}
         >
             <Toolbar>
+                <IconButton
+                    color="inherit"
+                    onClick={onMenuClick}
+                    sx={{
+                        mr: 1,
+                        display: { xs: "inline-flex", md: "none" },
+                    }}
+                    aria-label="open navigation"
+                >
+                    <MenuIcon />
+                </IconButton>
+                
                 <Typography
                     variant="h6"
                     component="div"

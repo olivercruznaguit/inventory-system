@@ -18,3 +18,14 @@ type ProductList struct {
 	Products   []Product
 	Pagination Pagination
 }
+
+type RecentStockMovement struct {
+	ID                int64
+	ProductID         int64
+	ProductName       string
+	Type              StockMovementType
+	Quantity          int
+	RemainingQuantity int
+	Reason            *string
+	CreatedAt         time.Time
+}

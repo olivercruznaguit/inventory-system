@@ -137,3 +137,19 @@ func (s *InventoryService) GetInventoryDashboard(ctx context.Context) (model.Inv
 
 	return productRepo.GetInventoryDashboard(ctx)
 }
+
+func (sr *InventoryService) GetRecentStockMovements(ctx context.Context, limit int) ([]model.RecentStockMovement, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+
+	inventoryRepo := repository.NewStockMovementRepository(sr.db.DB())
+
+	recentStockMovements, err := inventoryRepo.GetRecent(ctx, limit)
+
+	if err != nil {
+		return []model.RecentStockMovement{}, err
+	}
+
+	return recentStockMovements, nil
+}

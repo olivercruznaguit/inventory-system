@@ -1,6 +1,6 @@
 import type { AuthResponse } from "../types/auth"
 import type { CategoryListResponse, CategoryQueryParams } from "../types/categories"
-import type { InventoryDashboard } from "../types/dashboard"
+import type { InventoryDashboard, RecentStockMovementResponse } from "../types/dashboard"
 import type { InventoryRequest, StockMovementResponse } from "../types/inventory"
 import type { CreateProductRequest, ProductListResponse, ProductQueryParams, UpdateProductRequest } from "../types/products"
 
@@ -87,6 +87,29 @@ export async function stockMovement(token: string, productID: string | number): 
 
     if (!response.ok) {
         throw new Error("Failed to get product stock movement")
+    }
+
+    return response.json()
+}
+
+export async function getRecentStockMovements(token: string, limit?: number): Promise<RecentStockMovementResponse> {
+    const urlParams = new URLSearchParams()
+
+    if (limit !== undefined) {
+        urlParams.set("limit", limit.toString())
+    }
+    
+    const response = await fetch(`${API_URL}/inventory/movements?${urlParams.toString()}`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    })
+
+    if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error ?? "Failed to fetch recent stock movements")
     }
 
     return response.json()

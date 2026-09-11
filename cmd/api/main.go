@@ -138,7 +138,13 @@ func main() {
 	// INVENTORY
 	inventory := router.Group("/inventory")
 	inventory.Use(authMiddleware.Authenticate)
-	inventory.GET("/dashboard", inventoryHandler.GetInventoryDashboard)
+	{
+		// get the dashboard data
+		inventory.GET("/dashboard", inventoryHandler.GetInventoryDashboard)
+
+		// get the recent stock movements
+		inventory.GET("/movements", inventoryHandler.GetRecent)
+	}
 
 	// USERS
 	users := router.Group("/users")

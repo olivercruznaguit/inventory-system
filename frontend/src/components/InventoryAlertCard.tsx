@@ -1,10 +1,11 @@
 import { Card, CardContent, Typography } from "@mui/material"
+import type { AlertSeverity } from "../types/dashboard"
 
 type InventoryAlertCardProps = {
     title: string
-    count: number
+    count: number | string
     description: string
-    severity: "warning" | "error"
+    severity: AlertSeverity
 }
 
 export default function InventoryAlertCard({

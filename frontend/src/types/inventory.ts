@@ -3,9 +3,11 @@ export type InventoryRequest = {
     reason: string
 }
 
+export type StockMovementType = "IN" | "OUT"
+
 export type StockMovement = {
     id: number
-    type: "IN" | "OUT"
+    type: StockMovementType
     quantity: number
     remainingQuantity: number
     reason: string | null

@@ -91,3 +91,60 @@ func (sr *StockMovementRepository) GetByProductID(ctx context.Context, productID
 
 	return stockMovements, nil
 }
+
+func (sr *StockMovementRepository) GetRecent(ctx context.Context, limit int) ([]model.RecentStockMovement, error) {
+	var recentStockMovements []model.RecentStockMovement
+
+	rows, err := sr.db.Query(ctx,
+		`SELECT
+			sm.id,
+			sm.product_id,
+			p.name,
+			sm.type,
+			sm.quantity,
+			sm.remaining_quantity,
+			sm.reason,
+			sm.created_at
+		FROM 
+			stock_movements sm
+		JOIN 
+			products p ON p.id = sm.product_id
+		ORDER BY 
+			sm.created_at DESC
+		LIMIT $1
+		`,
+		limit)
+
+	if err != nil {
+		return nil, fmt.Errorf("get recent stock movements: %w", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var recentStockMovement model.RecentStockMovement
+
+		err := rows.Scan(
+			&recentStockMovement.ID,
+			&recentStockMovement.ProductID,
+			&recentStockMovement.ProductName,
+			&recentStockMovement.Type,
+			&recentStockMovement.Quantity,
+			&recentStockMovement.RemainingQuantity,
+			&recentStockMovement.Reason,
+			&recentStockMovement.CreatedAt,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("get recent stock movements: %w", err)
+		}
+
+		recentStockMovements = append(recentStockMovements, recentStockMovement)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("get recent stock movements: %w", err)
+	}
+
+	return recentStockMovements, nil
+}
