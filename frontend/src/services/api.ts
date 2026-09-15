@@ -6,6 +6,25 @@ import type { CreateProductRequest, ProductListResponse, ProductQueryParams, Upd
 
 const API_URL = "http://localhost:8080"
 
+let onUnauthorized: (() => void) | null = null
+
+export function setOnUnauthorized(callback: () => void) {
+    onUnauthorized = callback
+}
+
+async function authFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit
+) {
+    const response = await fetch(input, init)
+
+    if (response.status === 401) {
+        onUnauthorized?.()
+    }
+
+    return response
+}
+
 export async function login(email: string, password: string):Promise<AuthResponse> {
     const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
@@ -27,7 +46,7 @@ export async function login(email: string, password: string):Promise<AuthRespons
 
 // INVENTORY
 export async function getInventoryDashboard(token: string):Promise<InventoryDashboard> {
-    const response = await fetch(`${API_URL}/inventory/dashboard`, {
+    const response = await authFetch(`${API_URL}/inventory/dashboard`, {
         headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
@@ -41,7 +60,7 @@ export async function getInventoryDashboard(token: string):Promise<InventoryDash
 }
 
 export async function stockIn(token: string, productID: string | number, request: InventoryRequest):Promise<void>{
-    const response = await fetch(`${API_URL}/products/${productID}/stock-in`, 
+    const response = await authFetch(`${API_URL}/products/${productID}/stock-in`, 
         {
             method: "POST",
             headers: {
@@ -59,7 +78,7 @@ export async function stockIn(token: string, productID: string | number, request
 }
 
 export async function stockOut(token: string, productID: string | number, request: InventoryRequest):Promise<void>{
-    const response = await fetch(`${API_URL}/products/${productID}/stock-out`, 
+    const response = await authFetch(`${API_URL}/products/${productID}/stock-out`, 
         {
             method: "POST",
             headers: {
@@ -77,7 +96,7 @@ export async function stockOut(token: string, productID: string | number, reques
 }
 
 export async function stockMovement(token: string, productID: string | number): Promise<StockMovementResponse> {
-    const response = await fetch(`${API_URL}/products/${productID}/stock-movements`, {
+    const response = await authFetch(`${API_URL}/products/${productID}/stock-movements`, {
         method: "GET",
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -99,7 +118,7 @@ export async function getRecentStockMovements(token: string, limit?: number): Pr
         urlParams.set("limit", limit.toString())
     }
     
-    const response = await fetch(`${API_URL}/inventory/movements?${urlParams.toString()}`, {
+    const response = await authFetch(`${API_URL}/inventory/movements?${urlParams.toString()}`, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
@@ -142,7 +161,7 @@ export async function getProducts(token: string, params: ProductQueryParams, sig
         urlParams.set("sortOrder", params.sortOrder)
     }
     
-    const response = await fetch(
+    const response = await authFetch(
         `${API_URL}/products?${urlParams.toString()}`,
         {
             headers: {
@@ -161,7 +180,7 @@ export async function getProducts(token: string, params: ProductQueryParams, sig
 }
 
 export async function createProduct(token: string, request: CreateProductRequest):Promise<void> {
-    const response = await fetch(`${API_URL}/products`,{
+    const response = await authFetch(`${API_URL}/products`,{
         method: "POST",
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -176,7 +195,7 @@ export async function createProduct(token: string, request: CreateProductRequest
 }
 
 export async function updateProduct(token: string, productID: string | number, request: UpdateProductRequest):Promise<void> {
-    const response = await fetch(`${API_URL}/products/${productID}`,{
+    const response = await authFetch(`${API_URL}/products/${productID}`,{
         method: "PUT",
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -191,7 +210,7 @@ export async function updateProduct(token: string, productID: string | number, r
 }
 
 export async function deleteProduct(token: string, productID: string | number):Promise<void> {
-    const response = await fetch(`${API_URL}/products/${productID}`,{
+    const response = await authFetch(`${API_URL}/products/${productID}`,{
         method: "DELETE",
         headers: {
             "Authorization": `Bearer ${token}`,
@@ -224,7 +243,7 @@ export async function getCategories(token: string, params: CategoryQueryParams, 
         urlParams.set("sortOrder", params.sortOrder)
     }
     
-    const response = await fetch(`${API_URL}/categories?${urlParams.toString()}`,
+    const response = await authFetch(`${API_URL}/categories?${urlParams.toString()}`,
         {
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -242,7 +261,7 @@ export async function getCategories(token: string, params: CategoryQueryParams, 
 }
 
 export async function createCategory(token: string, name: string): Promise<void> {
-    const response = await fetch(`${API_URL}/categories`,
+    const response = await authFetch(`${API_URL}/categories`,
         {
             method: "POST",
             headers: {
@@ -261,7 +280,7 @@ export async function createCategory(token: string, name: string): Promise<void>
 }
 
 export async function deleteCategory(token: string, categoryID: string | number): Promise<void> {
-    const response = await fetch(`${API_URL}/categories/${categoryID}`,
+    const response = await authFetch(`${API_URL}/categories/${categoryID}`,
         {
             method: "DELETE",
             headers: {
@@ -277,7 +296,7 @@ export async function deleteCategory(token: string, categoryID: string | number)
 }
 
 export async function updateCategory(token: string, categoryID: string | number, name: string): Promise<void> {
-    const response = await fetch(`${API_URL}/categories/${categoryID}`,
+    const response = await authFetch(`${API_URL}/categories/${categoryID}`,
         {
             method: "PUT",
             headers: {

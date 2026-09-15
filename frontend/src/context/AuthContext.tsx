@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import type { User } from "../types/user"
-import { login as LoginApi } from "../services/api"
+import { login as LoginApi, setOnUnauthorized } from "../services/api"
 import type { JwtPayload } from "../types/auth"
 import { jwtDecode } from "jwt-decode"
 import { AuthContext } from "./AuthContext"
@@ -21,6 +21,15 @@ function getInitialAuth() {
 
     try {
         const payload = jwtDecode<JwtPayload>(storedToken)
+
+        if (payload.exp * 1000 <= Date.now()) {
+            localStorage.removeItem("token")
+
+            return {
+                user: null,
+                token: null,
+            }
+        }
 
         return {
             token: storedToken,
@@ -67,6 +76,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null)   
         setToken(null)
     }
+
+
+    useEffect(() => {
+        setOnUnauthorized(logout)
+    }, [])
 
     return (
         <AuthContext.Provider
